@@ -31,6 +31,9 @@ function HeaderButtons() {
   const openKey = shortcutLabel("file.openProject");
   return (
     <div className={styles.headerButtons}>
+      <Button disabled={opening} onClick={() => void executeAction("file.newProject")}>
+        <T>New Python Project</T>
+      </Button>
       <Button
         disabled={opening}
         onClick={() => void executeAction("file.openProject")}
@@ -61,7 +64,7 @@ function Landing() {
   return (
     <div className={styles.landing}>
       <div className={styles.landingTitle}>
-        <T>Welcome to OpenIDEA</T>
+        <T>Welcome to OpenPyCharm</T>
       </div>
       <p className={styles.landingText}>
         {canClone
@@ -71,6 +74,17 @@ function Landing() {
         <T>You can also drop a folder onto this window.</T>
       </p>
       <div className={styles.landingActions}>
+        <button
+          type="button"
+          className={styles.landingAction}
+          disabled={opening}
+          onClick={() => void executeAction("file.newProject")}
+        >
+          <span className={styles.landingIcon}>
+            <Icon name="plus" size={24} />
+          </span>
+          <T>New Python Project</T>
+        </button>
         <button
           type="button"
           className={styles.landingAction}

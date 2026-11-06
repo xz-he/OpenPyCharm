@@ -269,7 +269,7 @@ pub fn file_url(path: &str, dir: bool) -> String {
 /// `META-INF/MANIFEST.MF` listing `entries`, lines wrapped at 72 bytes (continuations start with a space).
 pub fn manifest(entries: &[PathBuf]) -> String {
     let urls: Vec<String> = entries.iter().map(|e| file_url(&e.to_string_lossy(), e.is_dir())).collect();
-    let mut out = String::from("Manifest-Version: 1.0\r\nCreated-By: OpenIDEA\r\n");
+    let mut out = String::from("Manifest-Version: 1.0\r\nCreated-By: OpenPyCharm\r\n");
     out.push_str(&wrap_header(&format!("Class-Path: {}", urls.join(" "))));
     out.push_str("\r\n");
     out

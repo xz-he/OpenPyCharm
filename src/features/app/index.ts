@@ -14,6 +14,7 @@ import { LightEditStatus } from "./LightEditStatus";
 import { installLocaleSync, registerLocalizedActions } from "./locale";
 import { installMenuBridge } from "./menuBridge";
 import { NewProjectOverlay } from "./NewProject";
+import { PyCharmImportOverlay } from "./PyCharmImport";
 import { projectActions, registerPowerSaveBanner } from "./projectActions";
 import { installWindowTitle } from "./title";
 import { installLaunchHandling, installLightEditAutoClose, windowActions } from "./windows";
@@ -34,6 +35,7 @@ export function activate(): () => void {
     registerOverlay({ id: "app.keymapReference", component: KeymapReferenceOverlay }),
     registerOverlay({ id: "app.invalidateCaches", component: InvalidateCachesOverlay }),
     registerOverlay({ id: "app.newProject", component: NewProjectOverlay }),
+    registerOverlay({ id: "app.pycharmImport", component: PyCharmImportOverlay }),
     registerStatusItem({
       id: "app.lightEdit",
       align: "left",

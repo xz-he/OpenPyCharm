@@ -1,9 +1,14 @@
 [package]
 name = "openidea"
-description = "OpenIDEA desktop shell: an open-source IDE inspired by IntelliJ IDEA"
+description = "OpenPyCharm desktop shell: a Python-first IDE with native Python tooling"
+autobins = false
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+
+[[bin]]
+name = "openpycharm"
+path = "src/main.rs"
 
 [lib]
 name = "openidea_lib"

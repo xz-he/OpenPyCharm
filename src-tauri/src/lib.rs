@@ -1,11 +1,11 @@
-//! OpenIDEA desktop shell: wires the backend crates into Tauri.
+//! OpenPyCharm desktop shell: wires the backend crates into Tauri.
 //!
 //! This crate is glue only. Each `commands/<domain>.rs` is a thin, typed
 //! adapter from IPC to a backend crate; no domain logic lives here.
 
 mod application_focus;
 mod commands;
-#[cfg(debug_assertions)]
+#[cfg(all(debug_assertions, dev))]
 mod dev;
 mod events;
 #[cfg(any(target_os = "linux", test))]
@@ -61,7 +61,7 @@ pub fn export_bindings(builder: &tauri_specta::Builder<tauri::Wry>) {
 pub fn run() {
     ide_workspace::process::mark_start();
     let context = tauri::generate_context!();
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, dev))]
     let context = dev::configure(context);
     logging::init(&context.config().identifier);
 
@@ -77,7 +77,7 @@ pub fn run() {
     }
 
     let builder = specta_builder();
-    #[cfg(debug_assertions)]
+    #[cfg(all(debug_assertions, dev))]
     export_bindings(&builder);
 
     let app = tauri::Builder::default();
@@ -103,8 +103,8 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build());
     // Files of plugins' web views, for their sandboxed frames.
     let app = app.register_asynchronous_uri_scheme_protocol(plugin_web::SCHEME, plugin_web::handle);
-    // E2E automation bridge (Tauri MCP), debug builds only, localhost only.
-    #[cfg(debug_assertions)]
+    // E2E automation bridge (Tauri MCP), development launches only, localhost only.
+    #[cfg(all(debug_assertions, dev))]
     let app = app.plugin(tauri_plugin_mcp_bridge::Builder::new().bind_address("127.0.0.1").build());
 
     // Paths macOS asked to open (Finder's Open With, the Dock) before setup ran: the first window takes them.
@@ -211,7 +211,7 @@ pub fn run() {
         _ => {}
     })
     .build(context)
-    .expect("error while running OpenIDEA")
+    .expect("error while running OpenPyCharm")
     .run(move |app, event| {
         #[cfg(target_os = "macos")]
         if let tauri::RunEvent::Opened { urls } = &event {

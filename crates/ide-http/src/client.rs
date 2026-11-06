@@ -46,7 +46,7 @@ pub fn build(proxy: &ProxySettings) -> IdeResult<reqwest::Client> {
         .tls_backend_preconfigured(tls)
         .resolve_to_addrs("localhost", &loopback)
         .connect_timeout(Duration::from_secs(30))
-        .user_agent(concat!("OpenIDEA-HttpClient/", env!("CARGO_PKG_VERSION")));
+        .user_agent(concat!("OpenPyCharm-HttpClient/", env!("CARGO_PKG_VERSION")));
     with_proxy(builder, proxy).build().map_err(|e| fail(e.to_string()))
 }
 

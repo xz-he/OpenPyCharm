@@ -524,7 +524,7 @@ async fn initialize_and_incremental_sync() {
     let s = h.launcher.state("mock");
 
     let init = &s.requested("initialize")[0];
-    assert_eq!(init["clientInfo"]["name"], "OpenIDEA");
+    assert_eq!(init["clientInfo"]["name"], "OpenPyCharm");
     assert_eq!(init["capabilities"]["general"]["positionEncodings"], json!(["utf-16"]));
     assert_eq!(init["capabilities"]["textDocument"]["completion"]["completionItem"]["snippetSupport"], true);
     assert_eq!(init["initializationOptions"], json!({ "flag": true, "nested": { "deep": 1 } }));
@@ -1354,7 +1354,7 @@ async fn java_formatter_profiles_reach_initialization_and_live_configuration_wit
     let init = state.requested("initialize")[0].clone();
     assert_eq!(
         init["initializationOptions"]["settings"]["java"]["format"]["settings"]["profile"],
-        "OpenIDEA IntelliJ IDEA"
+        "OpenPyCharm IntelliJ IDEA"
     );
     for mode in ["custom", "default", "intellij", "default"] {
         style.lock().formatter = Some(mode.into());
@@ -1383,7 +1383,7 @@ async fn java_formatter_profiles_reach_initialization_and_live_configuration_wit
             .await
             .unwrap();
         assert_eq!(result[0]["url"], expected);
-        assert_eq!(result[0]["profile"], if mode == "intellij" { "OpenIDEA IntelliJ IDEA" } else { "" });
+        assert_eq!(result[0]["profile"], if mode == "intellij" { "OpenPyCharm IntelliJ IDEA" } else { "" });
         assert_eq!(result[1], false);
         assert_eq!(state.launches.load(Ordering::SeqCst), 1);
     }

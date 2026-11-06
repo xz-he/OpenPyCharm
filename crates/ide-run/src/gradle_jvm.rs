@@ -25,7 +25,7 @@ fn groovy_string(s: &str) -> String {
 pub fn init_script(jvm_args: &[String]) -> String {
     let list = jvm_args.iter().map(|a| groovy_string(a)).collect::<Vec<_>>().join(", ");
     format!(
-        "// Written by OpenIDEA: VM options of the run configuration.\n\
+        "// Written by OpenPyCharm: VM options of the run configuration.\n\
          allprojects {{\n    \
              tasks.withType(JavaExec).configureEach {{ jvmArgs([{list}]) }}\n    \
              tasks.withType(Test).configureEach {{ jvmArgs([{list}]) }}\n\

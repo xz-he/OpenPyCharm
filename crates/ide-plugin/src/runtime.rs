@@ -261,7 +261,7 @@ pub fn check_api(built_for: &semver::Version, host: &semver::Version) -> Result<
     let newer = b > h;
     let (b, h) = (format!("{}.{}", b.0, b.1), format!("{}.{}", h.0, h.1));
     Err(if newer {
-        format!("the component was built for plugin API {b}, newer than this IDE's {h}: update OpenIDEA")
+        format!("the component was built for plugin API {b}, newer than this IDE's {h}: update OpenPyCharm")
     } else {
         format!("the component was built for plugin API {b}; this IDE runs {h}: rebuild it with the {h} SDK")
     })
@@ -1011,7 +1011,7 @@ fn view_from_wit(v: wit_vt::View) -> View {
     let body = match v.body {
         wit_vt::Body::Message(m) => ViewBody::Message(clip(m, 16 << 10)),
         wit_vt::Body::Other(e) => {
-            ViewBody::Message(format!("This view needs a newer version of OpenIDEA ({}).", clip(e.kind, 64)))
+            ViewBody::Message(format!("This view needs a newer version of OpenPyCharm ({}).", clip(e.kind, 64)))
         }
         wit_vt::Body::Tree(items) => ViewBody::Tree(
             items
@@ -1119,7 +1119,7 @@ mod tests {
     fn bodies_and_fields_of_a_newer_api_degrade() {
         let view = |body| wit_vt::View { toolbar: Vec::new(), body, status: None };
         let shown = view_from_wit(view(wit_vt::Body::Other(ext("markdown"))));
-        assert_eq!(shown.body, ViewBody::Message("This view needs a newer version of OpenIDEA (markdown).".into()));
+        assert_eq!(shown.body, ViewBody::Message("This view needs a newer version of OpenPyCharm (markdown).".into()));
         let field = |key: &str, value| wit_vt::Field { key: key.into(), label: key.into(), value };
         let form = view_from_wit(view(wit_vt::Body::Form(vec![
             field("color", wit_vt::FieldValue::Other(ext("color"))),

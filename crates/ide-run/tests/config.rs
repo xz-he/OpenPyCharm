@@ -69,12 +69,12 @@ fn preserves_unrelated_content() {
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(
         &path,
-        "# OpenIDEA run configurations\ndefault = \"user:server\"\n\n[[configurations]]\nid = \"old\"\ncommand = \"x\"\n\n[ui]\nshow-output = true\n",
+        "# OpenPyCharm run configurations\ndefault = \"user:server\"\n\n[[configurations]]\nid = \"old\"\ncommand = \"x\"\n\n[ui]\nshow-output = true\n",
     )
     .unwrap();
     save_user_configs(dir.path(), &sample()).unwrap();
     let text = fs::read_to_string(&path).unwrap();
-    assert!(text.contains("# OpenIDEA run configurations"), "{text}");
+    assert!(text.contains("# OpenPyCharm run configurations"), "{text}");
     assert!(text.contains("default = \"user:server\""), "{text}");
     assert!(text.contains("show-output = true"), "{text}");
     assert!(!text.contains("\"old\""), "{text}");

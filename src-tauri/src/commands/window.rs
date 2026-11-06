@@ -323,11 +323,11 @@ pub struct UpdateCheck {
 }
 
 fn update_endpoint_env() -> Option<String> {
-    std::env::var("OPENIDEA_UPDATE_ENDPOINT").ok().filter(|s| !s.trim().is_empty())
+    std::env::var("OPENPYCHARM_UPDATE_ENDPOINT").ok().filter(|s| !s.trim().is_empty())
 }
 
 /// Whether an update endpoint is configured: `plugins.updater.endpoints` in
-/// tauri.conf.json, or the `OPENIDEA_UPDATE_ENDPOINT` environment variable. Empty by
+/// tauri.conf.json, or the `OPENPYCHARM_UPDATE_ENDPOINT` environment variable. Empty by
 /// default, and "Check for Updates…" is hidden then.
 pub fn updates_configured<R: tauri::Runtime>(app: &AppHandle<R>) -> bool {
     let in_config = app
@@ -350,7 +350,7 @@ fn updater(app: &AppHandle) -> IdeResult<Option<tauri_plugin_updater::Updater>> 
     let proxy = ide_core::proxy_settings::proxy();
     let mut builder = app.updater_builder().configure_client(move |b| ide_http::client::with_proxy(b, &proxy));
     if let Some(url) = env {
-        let url = url.parse().map_err(|e| IdeError::invalid(format!("OPENIDEA_UPDATE_ENDPOINT: {e}")))?;
+        let url = url.parse().map_err(|e| IdeError::invalid(format!("OPENPYCHARM_UPDATE_ENDPOINT: {e}")))?;
         builder = builder.endpoints(vec![url]).map_err(|e| IdeError::invalid(e.to_string()))?;
     }
     builder.build().map(Some).map_err(|e| IdeError::unavailable(e.to_string()))
@@ -375,13 +375,13 @@ pub async fn app_check_update(app: AppHandle) -> IdeResult<UpdateCheck> {
 }
 
 /// The background check made once per process when the first window starts;
-/// later calls (other windows) and debug builds get `None`. Failures are logged,
+/// later calls (other windows) and development launches get `None`. Failures are logged,
 /// not reported: the user didn't ask for this check.
 #[tauri::command]
 #[specta::specta]
 pub async fn app_startup_update_check(app: AppHandle) -> Option<UpdateInfo> {
     static DONE: AtomicBool = AtomicBool::new(false);
-    if cfg!(debug_assertions) || DONE.swap(true, Ordering::SeqCst) {
+    if cfg!(dev) || DONE.swap(true, Ordering::SeqCst) {
         return None;
     }
     match app_check_update(app).await {

@@ -752,7 +752,7 @@ impl LspManager {
         }
         let mut params = json!({
             "processId": std::process::id(),
-            "clientInfo": { "name": "OpenIDEA", "version": env!("CARGO_PKG_VERSION") },
+            "clientInfo": { "name": "OpenPyCharm", "version": env!("CARGO_PKG_VERSION") },
             "locale": "en",
             "rootPath": server.root.to_string_lossy(),
             "rootUri": root_uri,

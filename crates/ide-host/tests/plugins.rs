@@ -2407,13 +2407,13 @@ fn a_zipped_plugin_folder_installs_like_the_folder() {
     assert_eq!(info.id, "language-toy");
     assert_eq!(f.host.languages().len(), 1);
 
-    // A zip that isn't an OpenIDEA plugin says so.
+    // A zip that isn't an OpenPyCharm plugin says so.
     let other = tmp.path().join("intellij-plugin.zip");
     let mut zip = zip::ZipWriter::new(std::fs::File::create(&other).unwrap());
     zip.start_file("my-plugin/lib/my-plugin.jar", zip::write::SimpleFileOptions::default()).unwrap();
     zip.finish().unwrap();
     let err = f.host.unpack_package(&other).unwrap_err().message;
-    assert!(err.contains("is not an OpenIDEA plugin"), "{err}");
+    assert!(err.contains("is not an OpenPyCharm plugin"), "{err}");
 }
 
 /// What the UI writes for an imported IntelliJ theme goes through the install page.

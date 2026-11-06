@@ -118,7 +118,9 @@ pub async fn sdk_python_create_venv(
     request: RequestId,
     on_output: Channel<String>,
 ) -> IdeResult<Sdk> {
-    host.require_trust(window)?;
+    if let Ok(project) = host.project(window) {
+        project.require_trust()?;
+    }
     let cancel = host.begin_project_request(window, request);
     let result = tokio::task::spawn_blocking(move || {
         ide_sdk::python::create_venv(&base, &location, &cancel, &|line| {

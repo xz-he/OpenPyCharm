@@ -1,4 +1,4 @@
-//! `openidea-plugin`: scaffolds, builds, checks and links OpenIDEA plugins.
+//! `openidea-plugin`: scaffolds, builds, checks and links OpenPyCharm plugins.
 //!
 //! ```text
 //! openidea-plugin new <dir> [--template command|theme|icon-theme|language] [--id ID] [--name NAME] [--sdk PATH]
@@ -479,7 +479,7 @@ fn link(dir: &Path, add: bool) -> Result<(), String> {
     std::fs::write(&tmp, json)
         .and_then(|()| std::fs::rename(&tmp, &file))
         .map_err(|e| format!("{}: {e}", file.display()))?;
-    println!("open Settings › Plugins in OpenIDEA to load the change");
+    println!("open Settings › Plugins in OpenPyCharm to load the change");
     Ok(())
 }
 

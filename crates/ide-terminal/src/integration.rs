@@ -11,7 +11,7 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-const ZSHENV: &str = r#"# OpenIDEA shell integration (generated)
+const ZSHENV: &str = r#"# OpenPyCharm shell integration (generated)
 _openidea_dir=$ZDOTDIR
 ZDOTDIR=${OPENIDEA_USER_ZDOTDIR:-$HOME}
 [[ -f $ZDOTDIR/.zshenv ]] && . $ZDOTDIR/.zshenv
@@ -19,14 +19,14 @@ OPENIDEA_USER_ZDOTDIR=$ZDOTDIR
 ZDOTDIR=$_openidea_dir
 "#;
 
-const ZPROFILE: &str = r#"# OpenIDEA shell integration (generated)
+const ZPROFILE: &str = r#"# OpenPyCharm shell integration (generated)
 ZDOTDIR=$OPENIDEA_USER_ZDOTDIR
 [[ -f $ZDOTDIR/.zprofile ]] && . $ZDOTDIR/.zprofile
 OPENIDEA_USER_ZDOTDIR=$ZDOTDIR
 ZDOTDIR=$_openidea_dir
 "#;
 
-const ZSHRC: &str = r#"# OpenIDEA shell integration (generated)
+const ZSHRC: &str = r#"# OpenPyCharm shell integration (generated)
 ZDOTDIR=$OPENIDEA_USER_ZDOTDIR
 [[ -f $ZDOTDIR/.zshrc ]] && . $ZDOTDIR/.zshrc
 OPENIDEA_USER_ZDOTDIR=$ZDOTDIR
@@ -42,13 +42,13 @@ if [[ ! -o login ]]; then
 fi
 "#;
 
-const ZLOGIN: &str = r#"# OpenIDEA shell integration (generated)
+const ZLOGIN: &str = r#"# OpenPyCharm shell integration (generated)
 ZDOTDIR=$OPENIDEA_USER_ZDOTDIR
 [[ -f $ZDOTDIR/.zlogin ]] && . $ZDOTDIR/.zlogin
 unset OPENIDEA_USER_ZDOTDIR _openidea_dir
 "#;
 
-const BASHRC: &str = r#"# OpenIDEA shell integration (generated)
+const BASHRC: &str = r#"# OpenPyCharm shell integration (generated)
 if [ "${OPENIDEA_LOGIN:-}" = 1 ]; then
   unset OPENIDEA_LOGIN
   [ -f /etc/profile ] && . /etc/profile

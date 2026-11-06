@@ -1,7 +1,7 @@
 {
-  "name": "openidea",
+  "name": "openpycharm",
   "private": true,
-  "description": "An open-source IDE inspired by IntelliJ IDEA",
+  "description": "A Python-first IDE with native Python tooling",
   "version": "0.1.36",
   "license": "Apache-2.0",
   "type": "module",

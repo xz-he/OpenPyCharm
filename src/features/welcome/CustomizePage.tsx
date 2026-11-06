@@ -199,6 +199,9 @@ export function CustomizePage() {
       <button type="button" className={styles.link} onClick={() => void executeAction("file.settings")}>
         <T>All settings…</T>
       </button>
+      <button type="button" className={styles.link} onClick={() => void executeAction("file.importPyCharmSettings")}>
+        <T>Import PyCharm Settings…</T>
+      </button>
     </div>
   );
 }

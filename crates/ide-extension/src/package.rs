@@ -209,7 +209,10 @@ pub fn unpack(archive: &Path, dest: &Path) -> Result<Unpacked, String> {
     }
     // An IntelliJ plugin or any other zip: say what is missing rather than fail later.
     let prefix = package_prefix(&names).ok_or_else(|| {
-        format!("{} is not an OpenIDEA plugin: no {MANIFEST_FILE} at its root or in its only folder", archive.display())
+        format!(
+            "{} is not an OpenPyCharm plugin: no {MANIFEST_FILE} at its root or in its only folder",
+            archive.display()
+        )
     })?;
     std::fs::create_dir_all(dest).map_err(|e| e.to_string())?;
     let (mut files, mut signature, mut total, mut manifest) = (Vec::new(), None, 0u64, false);
@@ -851,7 +854,7 @@ mod tests {
             let path = tmp.path().join(name);
             zip_of(&path, entries);
             let err = unpack(&path, &tmp.path().join(name).with_extension("out")).unwrap_err();
-            assert!(err.contains("is not an OpenIDEA plugin"), "{name}: {err}");
+            assert!(err.contains("is not an OpenPyCharm plugin"), "{name}: {err}");
         }
     }
 
@@ -928,13 +931,13 @@ mod tests {
         let roots = [root.public_base64()];
         let listed = |index: &Index| -> Vec<(String, bool)> {
             let mut index = index.clone();
-            index.pin_publisher("openidea", "OpenIDEA", &roots);
+            index.pin_publisher("openidea", "OpenPyCharm", &roots);
             keys(&mut index, "openidea").iter().map(|k| (k.key.clone(), k.revoked)).collect()
         };
         // The intruder's key goes, the successor the root endorsed stays, the root is added.
         assert_eq!(listed(&index), [(next.public_base64(), false), (root.public_base64(), false)]);
         let mut pinned = index.clone();
-        pinned.pin_publisher("openidea", "OpenIDEA", &roots);
+        pinned.pin_publisher("openidea", "OpenPyCharm", &roots);
         let digest = "d";
         let signed = |k: &PublisherKey| k.sign("openidea", "openidea.tools", "1.0.0", digest);
         assert!(pinned.verify(&signed(&intruder), "openidea.tools", "1.0.0", digest).is_err());
@@ -945,11 +948,11 @@ mod tests {
 
         // A publisher missing from the index is added with its roots.
         let mut empty = Index { format: INDEX_FORMAT, ..Index::default() };
-        empty.pin_publisher("openidea", "OpenIDEA", &[root.public_base64()]);
+        empty.pin_publisher("openidea", "OpenPyCharm", &[root.public_base64()]);
         assert_eq!(empty.verify(&signed(&root), "openidea.tools", "1.0.0", digest).unwrap(), "openidea");
         // No roots: the index decides.
         let mut open = index.clone();
-        open.pin_publisher("openidea", "OpenIDEA", &[]);
+        open.pin_publisher("openidea", "OpenPyCharm", &[]);
         assert_eq!(open, index);
     }
 }

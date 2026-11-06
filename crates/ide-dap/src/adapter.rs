@@ -273,7 +273,7 @@ pub const DEBUGPY_TOOL: &str = "debugpy";
 pub const DEBUGPY_MISSING: &str = "debugpy is not installed";
 
 /// Makes `spec` (`<python> -m debugpy.adapter`) runnable like PyCharm's bundled debugger:
-/// the interpreter's own debugpy when it has one (venvs), else OpenIDEA's private copy on
+/// the interpreter's own debugpy when it has one (venvs), else OpenPyCharm's private copy on
 /// `PYTHONPATH`. Neither: an `unavailable` error naming the interpreter.
 pub async fn prepare_debugpy(spec: &mut AdapterSpec) -> IdeResult<()> {
     let (command, cwd) = (spec.command.clone(), spec.cwd.clone());
@@ -306,7 +306,7 @@ pub async fn prepare_debugpy(spec: &mut AdapterSpec) -> IdeResult<()> {
         return Ok(());
     }
     Err(IdeError::unavailable(format!(
-        "{DEBUGPY_MISSING} for {}. Install OpenIDEA's copy (works with every interpreter) or run `{} -m pip install debugpy`",
+        "{DEBUGPY_MISSING} for {}. Install OpenPyCharm's copy (works with every interpreter) or run `{} -m pip install debugpy`",
         python.display(),
         python.display()
     )))
@@ -330,7 +330,7 @@ pub fn not_standalone(spec: &AdapterSpec) -> IdeError {
 
 pub fn missing(spec: &AdapterSpec) -> IdeError {
     let mut msg = format!(
-        "debug adapter `{}` not found (`{}` is neither installed by OpenIDEA nor on PATH)",
+        "debug adapter `{}` not found (`{}` is neither installed by OpenPyCharm nor on PATH)",
         spec.adapter, spec.command
     );
     if let Some(hint) = &spec.install_hint {

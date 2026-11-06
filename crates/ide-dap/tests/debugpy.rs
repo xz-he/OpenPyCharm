@@ -76,7 +76,17 @@ async fn debugpy_end_to_end() {
     assert_eq!(v.value, "100");
     manager.set_breakpoints(script.clone(), vec![]).await.unwrap();
     manager.resume(id, thread_id).await.unwrap();
-    wait(&events, |e| matches!(e, DebugEvent::Output { output, .. } if output.contains("total 3"))).await;
     wait(&events, |e| matches!(e, DebugEvent::Terminated)).await;
+    let output: String = events
+        .lock()
+        .iter()
+        .filter_map(|event| match event {
+            IdeEvent::Debug { event: DebugEvent::Output { output, category }, .. } if category == "stdout" => {
+                Some(output.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    assert!(output.contains("total 3"), "{output}");
     let _ = std::fs::remove_dir_all(&dir);
 }

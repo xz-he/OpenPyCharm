@@ -79,7 +79,7 @@ function IntellijThemesDialog() {
         <p className={styles.muted}>
           <T>
             Theme plugins installed in the JetBrains IDEs on this computer. Importing a theme brings every theme of its
-            plugin and applies the chosen one. Colours without an OpenIDEA counterpart keep the default theme colours.
+            plugin and applies the chosen one. Colours without an OpenPyCharm counterpart keep the default theme colours.
           </T>
         </p>
         {themes === null ? (

@@ -784,7 +784,7 @@ impl DebugManager {
                 "initialize",
                 json!({
                     "clientID": "openidea",
-                    "clientName": "OpenIDEA",
+                    "clientName": "OpenPyCharm",
                     "adapterID": s.adapter,
                     "locale": "en",
                     "linesStartAt1": true,

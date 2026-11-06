@@ -302,9 +302,9 @@ impl SettingsStore {
     pub fn import_bundle(&self, path: &Path) -> IdeResult<(Settings, BTreeMap<String, String>)> {
         let bytes = std::fs::read(path)?;
         let bundle: SettingsBundle = serde_json::from_slice(&bytes)
-            .map_err(|e| IdeError::invalid(format!("not an OpenIDEA settings file: {e}")))?;
+            .map_err(|e| IdeError::invalid(format!("not an OpenPyCharm settings file: {e}")))?;
         if bundle.format != BUNDLE_FORMAT || bundle.version > BUNDLE_VERSION {
-            return Err(IdeError::invalid("not an OpenIDEA settings file, or one from a newer version"));
+            return Err(IdeError::invalid("not an OpenPyCharm settings file, or one from a newer version"));
         }
         let layer = parse_layer(&bundle.settings).map_err(|e| IdeError::invalid(format!("invalid settings: {e}")))?;
         try_merge(&mut defaults_json(), layer).map_err(|e| IdeError::invalid(format!("invalid settings: {e}")))?;
@@ -313,6 +313,58 @@ impl SettingsStore {
         }
         ide_vfs::write_atomic(&self.global_file, bundle.settings.as_bytes())?;
         Ok((self.reload(), bundle.storage))
+    }
+
+    pub fn merge_import(&self, patch: BTreeMap<String, Json>) -> IdeResult<PathBuf> {
+        if patch.is_empty() {
+            return Err(IdeError::invalid("No compatible settings to import"));
+        }
+        let original = match std::fs::read_to_string(&self.global_file) {
+            Ok(text) => text,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+            Err(error) => return Err(error.into()),
+        };
+        let mut document = original.parse::<DocumentMut>().map_err(|e| IdeError::invalid(e.to_string()))?;
+        let defaults = defaults_json();
+        for (key, value) in patch {
+            let segments: Vec<_> = key.split('.').collect();
+            let mut expected = &defaults;
+            for segment in &segments {
+                expected = expected.get(segment).ok_or_else(|| IdeError::invalid("Unknown imported setting"))?;
+            }
+            if matches!(key.as_str(), "editor.customSchemes" | "customKeymaps" | "editor.codeStyle.languages") {
+                let entries = value.as_object().ok_or_else(|| IdeError::invalid("Invalid imported schemes"))?;
+                for (name, item) in entries {
+                    let mut path = segments.clone();
+                    path.push(name);
+                    let mut merged = item.clone();
+                    if key == "editor.codeStyle.languages" {
+                        let layer = parse_layer(&document.to_string()).map_err(IdeError::invalid)?;
+                        let mut previous = &layer;
+                        for part in &path {
+                            previous = previous.get(part).unwrap_or(&Json::Null);
+                        }
+                        merged = previous.clone();
+                        deep_merge(&mut merged, item.clone());
+                    }
+                    set_in_document(&mut document, &path, Some(json_to_toml(&merged)?), true);
+                }
+            } else {
+                set_in_document(&mut document, &segments, Some(json_to_toml(&value)?), false);
+            }
+        }
+        let text = document.to_string();
+        let layer = parse_layer(&text).map_err(IdeError::invalid)?;
+        try_merge(&mut defaults_json(), layer).map_err(IdeError::invalid)?;
+        let directory = self.global_file.parent().ok_or_else(|| IdeError::internal("Missing settings directory"))?;
+        std::fs::create_dir_all(directory)?;
+        let mut backup = tempfile::Builder::new().prefix("settings-before-pycharm-").suffix(".toml").tempfile_in(directory)?;
+        std::io::Write::write_all(&mut backup, original.as_bytes())?;
+        backup.as_file().sync_all()?;
+        let (_, backup_path) = backup.keep().map_err(|error| IdeError::internal(error.to_string()))?;
+        ide_vfs::write_atomic(&self.global_file, text.as_bytes())?;
+        self.reload();
+        Ok(backup_path)
     }
 }
 
@@ -333,6 +385,23 @@ struct SettingsBundle {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn pycharm_merge_preserves_settings_and_backs_up_before_writing() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = SettingsStore::load(directory.path(), None);
+        store.set(SettingsScope::Global, "editor.fontSize", json!(18)).unwrap();
+        store.set(SettingsScope::Global, "general.confirmExit", json!(true)).unwrap();
+        let original = std::fs::read_to_string(&store.global_file).unwrap();
+        let backup = store.merge_import(BTreeMap::from([("general.confirmExit".into(), json!(false))])).unwrap();
+        assert_eq!(std::fs::read_to_string(backup).unwrap(), original);
+        assert_eq!(store.effective().editor.font_size, 18.0);
+        assert!(!store.effective().general.confirm_exit);
+        let imported = std::fs::read_to_string(&store.global_file).unwrap();
+        assert!(store.merge_import(BTreeMap::from([("editor.fontSize".into(), json!("invalid"))])).is_err());
+        assert_eq!(std::fs::read_to_string(&store.global_file).unwrap(), imported);
+        assert!(store.merge_import(BTreeMap::from([("unknown.setting".into(), json!(true))])).is_err());
+    }
 
     #[test]
     fn custom_color_schemes_are_user_settings_and_survive_reload() {

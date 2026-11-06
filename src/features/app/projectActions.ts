@@ -11,6 +11,7 @@ import { notifications, registerEditorBanner } from "@/workbench/contributions";
 import { promptInput } from "@/workbench/inputDialogs";
 import { showNewProject } from "./NewProject";
 import { tx } from "@/platform/i18n";
+import { previewPyCharmImport } from "./PyCharmImport";
 
 /** localStorage prefixes of IDE-level state exported with the settings (templates, macros, layouts). */
 export const EXPORTED_STORAGE = [
@@ -58,8 +59,8 @@ async function exportSettings() {
   const { save } = await import("@tauri-apps/plugin-dialog");
   const path = await save({
     title: "Export Settings",
-    defaultPath: "openidea-settings.json",
-    filters: [{ name: "OpenIDEA settings", extensions: ["json"] }],
+    defaultPath: "openpycharm-settings.json",
+    filters: [{ name: "OpenPyCharm settings", extensions: ["json"] }],
   });
   if (!path) return;
   try {
@@ -75,16 +76,20 @@ async function exportSettings() {
   }
 }
 
-async function importSettings() {
+async function importSettings(pycharmOnly = false) {
   const { open } = await import("@tauri-apps/plugin-dialog");
   const picked = await open({
-    title: "Import Settings",
+    title: tx(pycharmOnly ? "Import PyCharm Settings" : "Import Settings"),
     multiple: false,
-    filters: [{ name: "OpenIDEA settings", extensions: ["json"] }],
+    filters: [{ name: tx("OpenPyCharm or PyCharm settings"), extensions: pycharmOnly ? ["zip"] : ["json", "zip"] }],
   });
   const path = Array.isArray(picked) ? picked[0] : picked;
   if (!path) return;
   try {
+    if (/\.zip$/i.test(path)) {
+      await previewPyCharmImport(path);
+      return;
+    }
     const result = await call(commands.settingsImport(path));
     for (const [key, value] of Object.entries(result.storage))
       if (isExported(key))
@@ -180,7 +185,14 @@ export function projectActions(): Action[] {
       title: "Import Settings…",
       category: "File",
       keywords: ["restore settings", "keymap", "templates", "manage ide settings"],
-      run: desktop(importSettings),
+      run: desktop(() => importSettings()),
+    },
+    {
+      id: "file.importPyCharmSettings",
+      title: "Import PyCharm Settings…",
+      category: "File",
+      keywords: ["PyCharm", "settings.zip", "JetBrains", "import settings"],
+      run: desktop(() => importSettings(true)),
     },
     {
       id: "file.togglePowerSave",

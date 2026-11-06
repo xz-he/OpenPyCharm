@@ -1,64 +1,75 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="src-tauri/icons/source/openidea-wordmark-dark.svg">
-    <img src="src-tauri/icons/source/openidea-wordmark.svg" alt="OpenIDEA" height="56">
-  </picture>
-</p>
+# OpenPyCharm
 
-<p align="center">
-  The IDE you know, rebuilt in Rust.
-</p>
+面向 Python 的桌面 IDE，采用 Rust、Tauri 2、React 和 CodeMirror 6。
 
-<p align="center">
-  <a href="https://github.com/l0ng-ai/openidea/releases/latest"><b>Download</b></a>
-  &nbsp;·&nbsp;
-  <a href="#benchmark">Benchmark</a>
-  &nbsp;·&nbsp;
-  <a href="#plugins">Plugins</a>
-  &nbsp;·&nbsp;
-  <a href="https://discord.gg/2Zy4yn7gP">Discord</a>
-</p>
+这是初始开发预览版。并非 JetBrains 产品；不承诺与 PyCharm 功能或插件兼容。
 
-https://github.com/user-attachments/assets/234dd54c-1255-4b3a-b35c-533d78d737c0
+## 本次新增
 
-OpenIDEA brings the IntelliJ IDEA way of working — its keymap, its tool windows,
-its search-everything habits — to a native app with a Rust core.
+- 独立应用名称、图标、二进制及应用标识 `dev.openpycharm.ide`。
+- 独立开发模式标识和应用配置目录；保留原有版权与第三方许可证。
+- 欢迎页提供“新建 Python 项目”，默认生成可运行示例、pytest 测试、Ruff / basedpyright 配置。
+- 可用指定的 Python 解释器创建项目的 `.venv`；创建失败时保留文件并提供打开项目入口。
+- 关闭自动更新源，避免预览版本被其他安装包覆盖。
+- 直接读取 PyCharm 导出的 `settings.zip`，预览兼容项后合并，并自动备份原设置。
 
-Editor, code insight, debugger, Git, terminal, database and HTTP clients,
-for 60+ languages. Builds for macOS, Windows and Linux.
+## Windows 开发
 
-## Benchmark
+需要 Node.js 22.18+、pnpm、Rust 1.96+、Visual Studio C++ Build Tools、Windows SDK 和 WebView2。
 
-Opening [freqtrade](https://github.com/freqtrade/freqtrade) (Python, ~770 files)
-with warm caches, median of 5 runs:
+本机已在项目父目录的 `.openpycharm-tools` 中安装隔离 Rust 工具链。启动脚本优先使用该工具链，不修改系统 PATH。
 
-|                             | OpenIDEA          | IntelliJ IDEA 2026.2.3 |
-| --------------------------- | ----------------- | ---------------------- |
-| Window with the project     | **0.9 s**         | 3.1 s                  |
-| Ready (CPU settled)         | **1.1 s**         | 13.2 s                 |
-| Memory (USS, all processes) | **169 MB**        | 2011 MB                |
-| CPU time until ready        | **2.4 s**         | 47.9 s                 |
-| Idle CPU                    | **4 %** of a core | 7 % of a core          |
-| Quit                        | **0.3 s**         | 5.9 s                  |
+```powershell
+.\scripts\windows.ps1 -Task dev
+```
 
-A release build of OpenIDEA from `main` and IDEA with default settings and plugins, on
-Windows 11, 32-core AMD, 62 GB RAM.
-IDEA analyses Python more deeply, so "ready" doesn't mean the same work on
-both sides. Both are measured from the outside, the same way: see
-[`perf/compare`](perf/compare) to run it on your machine and projects.
+生成带内嵌前端的 Windows 预览安装包：
 
-## Plugins
+```powershell
+.\scripts\windows.ps1 -Task build
+```
 
-Plugins add actions, completion, quick fixes, tool windows, custom editors,
-themes, file icons and languages. They run as sandboxed WebAssembly components;
-themes, icon themes and languages need no code at all.
+该命令使用 debug profile，便于初期诊断，不代表最终发布性能。安装包输出到 `target/debug/bundle/nsis/`。
 
-Install them from Settings › Plugins, or start your own with
-`openidea-plugin new` — see [Writing OpenIDEA plugins](plugins/README.md) and
-the [official plugins](plugins/official). The plugin API is still a preview.
+安装包使用独立的桌面启动逻辑，不需要本机存在构建源码。修改启动或打包配置后，应对安装后的可执行文件运行回归检查：
 
-## License
+```powershell
+.\scripts\verify-windows-startup.ps1 -Executable 'D:\path\to\OpenPyCharm\openpycharm.exe' -HideSources
+```
 
-[Apache 2.0](LICENSE). Bundled third-party assets are listed in [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md).
+此检查会临时移开本仓库的 `src` 目录，模拟用户机器没有构建源码的情况；检查结束后恢复目录并关闭测试进程。请在构建和编辑停止时运行。它检查进程存活及原生窗口创建，欢迎页和项目操作需另行验证。
 
-<sub>Not affiliated with JetBrains. IntelliJ IDEA is a trademark of JetBrains s.r.o.</sub>
+## Python 开发流程
+
+1. 在欢迎页选择 **New Python Project**。
+2. 输入项目名称和位置，选择 **Python application** 模板。
+3. 可勾选创建虚拟环境，指定 Python 3.10+ 可执行文件；默认使用 PATH 中的 `python`。
+4. 创建后打开项目。信任自己创建的项目后，解释器、运行及调试等功能才能执行程序。
+5. 按生成的 README 激活环境并安装工具：
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements-dev.txt
+python main.py
+python -m pytest
+```
+
+IDE 复用上游的项目环境识别、LSP、debugpy、pytest、Git 和终端能力。不同项目、平台和高级操作仍需逐项验证，已验证范围记录在 [验证记录](docs/OPENPYCHARM-VERIFICATION.md)。
+
+## 导入 PyCharm 配置
+
+在欢迎页的“自定义”中选择 **导入 PyCharm 配置…**，或通过 **文件 → 管理 IDE 设置 → 导入设置…** 直接选择 PyCharm 导出的 `settings.zip`。预览兼容项后点击“导入”，应用会合并设置并显示原配置备份路径。
+
+支持常规设置、部分外观与编辑器选项、配色、已映射快捷键、Python 缩进规则和部分终端设置。插件与解释器登记等未支持内容会列入导入报告，详见 [导入范围与恢复方法](docs/PYCHARM-SETTINGS-IMPORT.md)。
+
+## 上游追踪与边界
+
+固定上游提交：`38ac62f1a41ad04fbb2c522af5e19d4c6433e2c1`，上游版本 0.1.36，见 [来源记录](openpycharm.upstream.json)。
+
+为减少同步成本，Rust 内部 crate、IPC 协议及项目内 `.openidea/` 格式保持兼容。应用级配置目录已隔离。
+
+未新增 Django 深层语义分析、PyCharm 插件兼容或远程解释器功能。数据库、Notebook 等上游模块保留，但尚未作为本预览版的验收项。
+
+## 许可证
+
+Apache-2.0。保留 [LICENSE](LICENSE)、[第三方许可证](THIRD_PARTY_LICENSES.md) 和 [上游 README](docs/UPSTREAM_README.md)。正式公开发行前需确定最终品牌名称和自己的更新签名配置。

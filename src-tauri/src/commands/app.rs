@@ -195,6 +195,7 @@ pub struct SettingsImport {
     pub settings: Settings,
     /// IDE state the frontend keeps (written back to its storage).
     pub storage: std::collections::BTreeMap<String, String>,
+    pub backup: Option<PathBuf>,
 }
 
 /// Import Settings…: replaces the global settings with the file's; every window re-reads them.
@@ -202,6 +203,33 @@ pub struct SettingsImport {
 #[specta::specta]
 pub async fn settings_import(window: Window, state: State<'_, AppState>, path: PathBuf) -> IdeResult<SettingsImport> {
     let (_, storage) = state.global_settings.import_bundle(&path)?;
+    let settings = refresh_imported_settings(&window, &state);
+    Ok(SettingsImport { settings, storage, backup: None })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn settings_read_pycharm(path: PathBuf) -> IdeResult<ide_workspace::settings_archive::PyCharmArchive> {
+    tauri::async_runtime::spawn_blocking(move || ide_workspace::settings_archive::read_pycharm_archive(&path))
+        .await
+        .map_err(|error| ide_core::IdeError::internal(error.to_string()))?
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn settings_import_pycharm(window: Window, state: State<'_, AppState>, patch: String) -> IdeResult<SettingsImport> {
+    let host = state.host.clone();
+    let backup = tauri::async_runtime::spawn_blocking(move || {
+        let values = serde_json::from_str(&patch).map_err(|error| ide_core::IdeError::invalid(format!("Invalid imported settings: {error}")))?;
+        host.global_settings.merge_import(values)
+    })
+    .await
+    .map_err(|error| ide_core::IdeError::internal(error.to_string()))??;
+    let settings = refresh_imported_settings(&window, &state);
+    Ok(SettingsImport { settings, storage: Default::default(), backup: Some(backup) })
+}
+
+fn refresh_imported_settings(window: &Window, state: &AppState) -> Settings {
     for project in state.projects() {
         let effective = project.settings.reload();
         project
@@ -210,11 +238,10 @@ pub async fn settings_import(window: Window, state: State<'_, AppState>, path: P
         let lsp = project.lsp.clone();
         tauri::async_runtime::spawn(async move { lsp.reconfigure().await });
     }
-    crate::commands::ssh::apply_ssh_settings(&state);
+    crate::commands::ssh::apply_ssh_settings(state);
     state.host.apply_proxy();
     state.sink.emit(ide_core::IdeEvent::SettingsChanged { key: String::new() });
-    let settings = ide_host::ops::project::settings(&state.host, window.label());
-    Ok(SettingsImport { settings, storage })
+    ide_host::ops::project::settings(&state.host, window.label())
 }
 
 /// Effective source / test / resource / excluded roots of the window's project:

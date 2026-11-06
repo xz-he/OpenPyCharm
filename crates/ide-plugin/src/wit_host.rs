@@ -443,7 +443,7 @@ impl vcs::Host for StoreData {
 impl events::Host for StoreData {
     fn subscribe(&mut self, kind: String) -> Fallible<()> {
         let Some(kind) = EventKind::parse(&kind) else {
-            return Ok(Err(wit::Error::Invalid(format!("no event kind {kind:?} in this OpenIDEA"))));
+            return Ok(Err(wit::Error::Invalid(format!("no event kind {kind:?} in this OpenPyCharm"))));
         };
         if let Some(cap) = kind.capability()
             && let Err(e) = self.require(cap)

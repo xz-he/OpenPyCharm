@@ -1,4 +1,4 @@
-// OpenIDEA Gradle sync: prints each project as Gradle evaluated it, one JSON line per project.
+// OpenPyCharm Gradle sync: prints each project as Gradle evaluated it, one JSON line per project.
 // Read by `ide_build::gradle::parse_reported_projects`. Dependencies are not resolved: the
 // Java language server reads the classpath itself, and resolving is the slow part of an import.
 import groovy.json.JsonOutput

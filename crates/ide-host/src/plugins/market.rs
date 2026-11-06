@@ -63,7 +63,7 @@ pub(super) fn built_in_official_keys() -> Vec<String> {
 }
 
 fn pinned(mut index: Index, official_keys: &[String]) -> Index {
-    index.pin_publisher(OFFICIAL_PUBLISHER, "OpenIDEA", official_keys);
+    index.pin_publisher(OFFICIAL_PUBLISHER, "OpenPyCharm", official_keys);
     index
 }
 
@@ -195,7 +195,7 @@ impl PluginHost {
         self.apply_revocations();
         if let Some(format) = newer {
             return Err(IdeError::unavailable(format!(
-                "the marketplace needs a newer OpenIDEA (index format {format}); its revocations still apply"
+                "the marketplace needs a newer OpenPyCharm (index format {format}); its revocations still apply"
             )));
         }
         let plugins = self.market_plugins();
@@ -261,7 +261,7 @@ impl PluginHost {
             .ok_or_else(|| IdeError::not_found(format!("{id} is not in the marketplace")))?;
         if !compatible {
             return Err(IdeError::unavailable(format!(
-                "{} {} needs plugin API {}: update OpenIDEA",
+                "{} {} needs plugin API {}: update OpenPyCharm",
                 entry.name, entry.version, entry.engine
             )));
         }

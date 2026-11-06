@@ -60,7 +60,7 @@ impl Process {
         // argv array is also the launch source of truth, without shell quoting.
         let spec = serde_json::json!({
             "argv": argv.iter().map(|v| v.to_string_lossy().into_owned()).collect::<Vec<_>>(),
-            "display_name": "OpenIDEA Python", "language": "python", "interrupt_mode": "signal"
+            "display_name": "OpenPyCharm Python", "language": "python", "interrupt_mode": "signal"
         });
         write_private(&directory.path().join("kernel.json"), &serde_json::to_vec(&spec).map_err(protocol_error)?)?;
         let mut command = Command::new(python);
@@ -276,7 +276,7 @@ gate = k.OpenEventW(0x00100000, 0, os.environ.pop('OPENIDEA_LAUNCH_EVENT'))
 if not interrupt or not gate:
     raise ctypes.WinError(ctypes.get_last_error())
 if k.WaitForSingleObject(gate, 30000) != 0:
-    raise RuntimeError('OpenIDEA kernel launch gate failed')
+    raise RuntimeError('OpenPyCharm kernel launch gate failed')
 k.CloseHandle(gate)
 os.environ['JPY_INTERRUPT_EVENT'] = str(interrupt)
 try:

@@ -97,7 +97,9 @@ async fn application_commands_work_in_restricted_projects_and_without_a_project(
         }
     }
     // Plugin installs run plugin code: from the welcome screen, but not in an untrusted project.
-    for command in ["plugin_install_dir", "plugin_uninstall", "plugin_set_enabled", "plugin_reload"] {
+    for command in
+        ["plugin_install_dir", "plugin_uninstall", "plugin_set_enabled", "plugin_reload", "sdk_python_create_venv"]
+    {
         assert!(!ide_host::trust::restricted_command_allowed(command), "{command}");
         assert!(host.authorize_command("main", command).is_err(), "{command}");
         assert!(host.authorize_command("welcome", command).is_ok(), "{command}");

@@ -297,7 +297,7 @@ function sampleUi(id: string): UiContribution[] {
 
 function samplePlugins(): PluginInfo[] {
   const base = {
-    authors: ["OpenIDEA contributors"],
+    authors: ["OpenPyCharm contributors"],
     homepage: null,
     changeNotes: null,
     source: "installed" as const,

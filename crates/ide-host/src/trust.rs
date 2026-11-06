@@ -339,12 +339,12 @@ pub fn restricted_command_allowed(cmd: &str) -> bool {
     ) || cmd.starts_with("plugin:")
 }
 
-/// Commands that change which plugin code runs: allowed where no project is open (the
-/// welcome screen), otherwise only in a trusted project.
+/// Commands allowed on the welcome screen, otherwise only in a trusted project.
 pub fn projectless_command_allowed(cmd: &str) -> bool {
     matches!(
         cmd,
-        "plugin_install_dir"
+        "sdk_python_create_venv"
+            | "plugin_install_dir"
             | "plugin_uninstall"
             | "plugin_set_enabled"
             | "plugin_grant"

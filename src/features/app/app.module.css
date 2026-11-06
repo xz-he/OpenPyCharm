@@ -214,3 +214,22 @@
   font-size: var(--fs-small);
   overflow-wrap: anywhere;
 }
+
+.pycharmImport {
+  padding: 16px;
+  max-height: 65vh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  color: var(--fg);
+  font-size: var(--fs-ui);
+}
+.pycharmImport p {
+  line-height: 1.5;
+}
+.pycharmImport h3 {
+  font-size: var(--fs-ui);
+}
+.pycharmSkipped {
+  color: var(--fg-subtle);
+  font-size: var(--fs-small);
+}

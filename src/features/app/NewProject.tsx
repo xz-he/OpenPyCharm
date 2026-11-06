@@ -1,15 +1,11 @@
-/**
- * File › New Project…: an empty project folder (no framework templates),
- * optionally a Git repository, opened in a new window (this one when it has
- * no project).
- */
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { call, commands, isTauri } from "@/platform/ipc";
 import { useProject } from "@/platform/project";
 import { useTxTemplate } from "@/platform/i18n";
-import { Button, Checkbox, Dialog, Input, T } from "@/ui";
+import { Button, Checkbox, Dialog, Input, Select, T } from "@/ui";
 import { defaultProjectDirectory, openProjectInWindow } from "./windows";
+import { createPythonEnvironment, scaffoldPythonProject } from "./pythonProject";
 import styles from "./app.module.css";
 
 const useNewProject = create<{ open: boolean }>(() => ({ open: false }));
@@ -63,6 +59,11 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("untitled");
   const [location, setLocation] = useState(initialLocation);
   const [git, setGit] = useState(true);
+  const [template, setTemplate] = useState("python");
+  const [venv, setVenv] = useState(true);
+  const [interpreter, setInterpreter] = useState("python");
+  const [createdPath, setCreatedPath] = useState<string | null>(null);
+  const [progress, setProgress] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const txTemplate = useTxTemplate();
@@ -77,7 +78,8 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
   }, []);
 
   const nameError = projectNameError(name);
-  const invalid = !!nameError || !location.trim();
+  const invalid = !!nameError || !location.trim() || (template === "python" && venv && !interpreter.trim());
+  const locked = busy || createdPath !== null;
   const path = location.trim() && !nameError ? joinPath(location.trim(), name) : "";
 
   const browse = async () => {
@@ -94,11 +96,19 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
   };
 
   const create = async () => {
-    if (invalid || busy) return;
+    if (invalid || locked || !isTauri()) return;
     setBusy(true);
     setError(null);
     try {
       await createProjectFolder(path, git);
+      setCreatedPath(path);
+      if (template === "python") {
+        await scaffoldPythonProject(path, name);
+        if (venv) {
+          setProgress("Creating virtual environment…");
+          await createPythonEnvironment(interpreter, path, setProgress);
+        }
+      }
     } catch (e) {
       setBusy(false);
       setError(errorText(e));
@@ -112,11 +122,25 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
     <Dialog
       open
       title="New Project"
-      onClose={onClose}
+      onClose={() => {
+        if (!busy) onClose();
+      }}
       width={520}
       buttons={[
-        { label: "Create", role: "default", disabled: invalid || busy, onClick: () => void create() },
-        { label: "Cancel", role: "cancel" },
+        { label: "Create", role: "default", disabled: invalid || locked || !isTauri(), onClick: () => void create() },
+        ...(createdPath && !busy
+          ? [
+              {
+                label: "Open project",
+                role: "extra" as const,
+                onClick: () => {
+                  onClose();
+                  void openProjectInWindow(createdPath, useProject.getState().project !== null);
+                },
+              },
+            ]
+          : []),
+        { label: "Cancel", role: "cancel", disabled: busy },
       ]}
     >
       <form
@@ -132,6 +156,7 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
           </span>
           <Input
             data-autofocus
+            disabled={locked}
             value={name}
             invalid={!!nameError}
             onChange={(e) => setName(e.target.value)}
@@ -142,15 +167,71 @@ function NewProjectDialog({ onClose }: { onClose: () => void }) {
           <span className={styles.newProjectLabel}>
             <T>Location:</T>
           </span>
-          <Input value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Location" />
-          <Button onClick={() => void browse()} disabled={!isTauri()}>
+          <Input
+            disabled={locked}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            aria-label="Location"
+          />
+          <Button onClick={() => void browse()} disabled={locked || !isTauri()}>
             <T>Browse…</T>
           </Button>
         </div>
         <div className={styles.newProjectHint}>
           {nameError ? txTemplate(nameError) : path && txTemplate(`Project will be created in: ${path}`)}
         </div>
-        <Checkbox checked={git} onChange={setGit} label="Create Git repository" />
+        <div className={styles.newProjectRow}>
+          <span className={styles.newProjectLabel}>
+            <T>Template:</T>
+          </span>
+          <Select
+            value={template}
+            onChange={setTemplate}
+            disabled={locked}
+            aria-label="Project template"
+            options={[
+              { value: "python", label: "Python application" },
+              { value: "empty", label: "Empty project" },
+            ]}
+          />
+        </div>
+        {template === "python" && (
+          <>
+            <Checkbox
+              checked={venv}
+              onChange={setVenv}
+              disabled={locked}
+              label="Create a project virtual environment (.venv)"
+            />
+            {venv && (
+              <div className={styles.newProjectRow}>
+                <span className={styles.newProjectLabel}>
+                  <T>Python:</T>
+                </span>
+                <Input
+                  value={interpreter}
+                  onChange={(event) => setInterpreter(event.target.value)}
+                  disabled={locked}
+                  aria-label="Base Python interpreter"
+                />
+              </div>
+            )}
+            <div className={styles.newProjectHint}>
+              <T>Use Python 3.10 or newer. Development tool installation commands are included in README.md.</T>
+            </div>
+          </>
+        )}
+        <Checkbox checked={git} onChange={setGit} disabled={locked} label="Create Git repository" />
+        {busy && (
+          <div className={styles.newProjectHint} role="status">
+            {txTemplate(progress)}
+          </div>
+        )}
+        {createdPath && error && (
+          <div className={styles.newProjectHint}>
+            <T>The project folder was created. Open it to finish setup or inspect the files.</T>
+          </div>
+        )}
         {error && <div className={styles.newProjectError}>{txTemplate(error)}</div>}
       </form>
     </Dialog>

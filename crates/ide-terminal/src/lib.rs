@@ -588,7 +588,7 @@ fn terminal_env(user: &BTreeMap<String, String>) -> BTreeMap<String, String> {
     let mut env = BTreeMap::new();
     env.insert("TERM".to_owned(), "xterm-256color".to_owned());
     env.insert("COLORTERM".to_owned(), "truecolor".to_owned());
-    env.insert("TERM_PROGRAM".to_owned(), "OpenIDEA".to_owned());
+    env.insert("TERM_PROGRAM".to_owned(), "OpenPyCharm".to_owned());
     env.insert("TERM_PROGRAM_VERSION".to_owned(), env!("CARGO_PKG_VERSION").to_owned());
     let has_lang = user.contains_key("LANG") || std::env::var_os("LANG").is_some_and(|v| !v.is_empty());
     if !has_lang {
@@ -740,7 +740,7 @@ mod tests {
         let (info, rx) = spawn_collect(&h, opts);
         assert_eq!(wait_exit(&h, info.id), Some(0));
         let out: String = rx.try_iter().collect();
-        assert!(out.contains("xterm-256color|OpenIDEA|42"), "{out:?}");
+        assert!(out.contains("xterm-256color|OpenPyCharm|42"), "{out:?}");
     }
 
     #[cfg(unix)]

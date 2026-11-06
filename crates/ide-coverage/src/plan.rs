@@ -5,7 +5,7 @@ use ide_run::RunConfig;
 use ide_run::wrap::{self, program_name};
 use std::path::Path;
 
-const GRADLE_INIT: &str = r#"// Written by OpenIDEA for Run with Coverage.
+const GRADLE_INIT: &str = r#"// Written by OpenPyCharm for Run with Coverage.
 allprojects {
     plugins.withId('java') {
         apply plugin: 'jacoco'

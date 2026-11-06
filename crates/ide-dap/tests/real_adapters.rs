@@ -207,7 +207,7 @@ fn add_managed_tools_to_path() {
     // `RUST_LOG=ide_dap::wire=trace` prints the DAP traffic.
     let _ = tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::from_default_env()).try_init();
     let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else { return };
-    // Like the app: adapters installed by OpenIDEA are found without being on PATH.
+    // Like the app: adapters installed by OpenPyCharm are found without being on PATH.
     adapter::set_tools_root(home.join("Library/Application Support/ai.l0ng.openidea/tools"));
 }
 

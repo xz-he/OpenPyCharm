@@ -8,6 +8,7 @@ body,
 .splash {
   background: var(--bg-frame, var(--boot-frame, #e9eaee));
 }
+
 :root[data-theme="dark"] :is(body, .splash) {
   background: var(--bg-frame, var(--boot-frame, #26282c));
 }
@@ -43,10 +44,10 @@ body,
   width: var(--splash-logo-size, 56px);
   height: var(--splash-logo-size, 56px);
 }
-/* 15px Inter: 2048 units per em, the line box from ascender to descender. */
 .splash-wordmark {
-  width: 73.2px;
-  height: 18.15px;
+  font-family: system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
 }
 .splash-bar {
   width: var(--splash-bar-width, 120px);

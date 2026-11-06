@@ -375,7 +375,7 @@ export function ConfigForm({ config, all, type, errors, template, onChange, modi
             checked={!config.local}
             onChange={(shared) => update({ local: !shared })}
             label="Store as project file"
-            aria-label="Store as project file (.openidea/run.toml); otherwise in the workspace (.openidea/run.local.toml)"
+            aria-label="Store as a shared project configuration; otherwise keep it local to this workspace"
           />
         </div>
       )}

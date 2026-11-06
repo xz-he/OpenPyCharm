@@ -1726,7 +1726,7 @@ fn usage_limit(e: &RpcError) -> Option<Option<f64>> {
 }
 
 fn client_info() -> Value {
-    json!({ "name": "OpenIDEA", "version": env!("CARGO_PKG_VERSION") })
+    json!({ "name": "OpenPyCharm", "version": env!("CARGO_PKG_VERSION") })
 }
 
 /// What the agent said it can do, and whether it takes embedded files.

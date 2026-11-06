@@ -91,6 +91,8 @@ pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
         app::settings_set,
         app::settings_export,
         app::settings_import,
+        app::settings_read_pycharm,
+        app::settings_import_pycharm,
         app::project_rename,
         app::project_roots,
         app::cancel_request,
