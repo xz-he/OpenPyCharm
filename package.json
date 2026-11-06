@@ -2,7 +2,7 @@
   "name": "openpycharm",
   "private": true,
   "description": "A Python-first IDE with native Python tooling",
-  "version": "0.1.36",
+  "version": "0.1.37",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
