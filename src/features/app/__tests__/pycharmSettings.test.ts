@@ -61,7 +61,7 @@ describe("PyCharm settings migration", () => {
     });
     expect(result.patch["editor.codeStyle.hardWrapAt"]).toBe(100);
     expect(result.patch["editor.codeStyle.languages"]).toEqual({
-      python: { indent: 4, tabSize: 8, insertSpaces: true },
+      python: { indent: 4, tabSize: 8, useTab: false },
     });
     expect(result.patch).not.toHaveProperty("editor.tabSize");
   });

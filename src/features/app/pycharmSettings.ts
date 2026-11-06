@@ -348,10 +348,10 @@ export function planPyCharmSettings(archive: {
           const fields: Record<string, string> = {
             TAB_SIZE: "tabSize",
             INDENT_SIZE: "indent",
-            USE_TAB_CHARACTER: "insertSpaces",
+            USE_TAB_CHARACTER: "useTab",
             RIGHT_MARGIN: "hardWrapAt",
           };
-          pythonStyle[fields[name!]!] = converted;
+          pythonStyle[fields[name!]!] = name === "USE_TAB_CHARACTER" ? !converted : converted;
           consumed.add(option);
         } else if (!scope) set(mapping[0], converted, "Python code style", option);
       }
