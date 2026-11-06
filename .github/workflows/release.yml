@@ -47,7 +47,7 @@ jobs:
             exit 1
           fi
       # The official plugins' public key (from PLUGIN_SIGNING_KEY, the seed
-      # `openidea-plugin keygen` writes), built into the app: their packages
+      # the plugin keygen command writes), built into the app: their packages
       # must carry its signature whatever the marketplace index lists. Without
       # the secret the app takes the index's word, as development builds do.
       - id: plugin-keys
@@ -74,7 +74,7 @@ jobs:
               return;
             }
             const { data } = await github.rest.repos.createRelease({
-              owner, repo, tag_name: tag, name: `OpenIDEA ${tag}`,
+              owner, repo, tag_name: tag, name: `OpenPyCharm ${tag}`,
               draft: true, prerelease: tag.includes("-"), generate_release_notes: true,
             });
             core.setOutput("id", data.id);
@@ -201,7 +201,7 @@ jobs:
       - name: Upload
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET: openidea-server-${{ matrix.os }}-${{ matrix.arch }}.gz
+          ASSET: openpycharm-server-${{ matrix.os }}-${{ matrix.arch }}.gz
         run: |
           gzip -9 -c target/${{ matrix.target }}/release/openidea-server > "$ASSET"
           if command -v sha256sum >/dev/null; then sha256sum "$ASSET"; else shasum -a 256 "$ASSET"; fi > "$ASSET.sha256"
@@ -210,11 +210,11 @@ jobs:
   # The official plugins, signed, and the marketplace index released apps read
   # (releases/latest/download/plugins-index.json). They are not in the
   # installers: users install them from Settings › Plugins. Without the
-  # signing key (secret PLUGIN_SIGNING_KEY: the file `openidea-plugin keygen`
+  # signing key (secret PLUGIN_SIGNING_KEY: the plugin keygen command
   # writes) nothing is published and the release goes on. The index also lists
   # the community plugins of the registry (COMMUNITY_PLUGINS_INDEX; refreshed
   # between releases by plugins-index.yml), and the release carries the
-  # openidea-plugin tool for Linux x64, which that workflow and the registry's
+  # openpycharm-plugin tool for Linux x64, which that workflow and the registry's
   # checks run.
   plugins:
     needs: create-release
@@ -276,9 +276,9 @@ jobs:
             --download-base "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG"
           "$tool" merge "$out/plugins-index.json" "$COMMUNITY_PLUGINS_INDEX" --keep openidea ||
             echo "::warning::the community plugins were not refreshed"
-          gzip -9 -c "$tool" > "$out/openidea-plugin-linux-x86_64.gz"
+          gzip -9 -c "$tool" > "$out/openpycharm-plugin-linux-x86_64.gz"
           gh release upload "$TAG" "$out"/*.oiplugin "$out/plugins-index.json" \
-            "$out/openidea-plugin-linux-x86_64.gz" --clobber
+            "$out/openpycharm-plugin-linux-x86_64.gz" --clobber
 
   # The updater manifest (latest.json), built once from the signed bundles every build uploaded.
   # Fails when a platform is missing, so a release never ships a manifest without it.
