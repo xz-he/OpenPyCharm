@@ -66,6 +66,8 @@ export const commands = {
 	settingsExport: (path: string, storage: { [key in string]: string }) => typedError<null, IdeError>(__TAURI_INVOKE("settings_export", { path, storage })),
 	/**  Import Settings…: replaces the global settings with the file's; every window re-reads them. */
 	settingsImport: (path: string) => typedError<SettingsImport_Serialize, IdeError>(__TAURI_INVOKE("settings_import", { path })),
+	settingsReadPycharm: (path: string) => typedError<PyCharmArchive, IdeError>(__TAURI_INVOKE("settings_read_pycharm", { path })),
+	settingsImportPycharm: (patch: string) => typedError<SettingsImport_Serialize, IdeError>(__TAURI_INVOKE("settings_import_pycharm", { patch })),
 	/**
 	 *  File › Rename Project…: the project's display name (title bar, recent
 	 *  projects); an empty `name` restores the folder name. Stored in the project's settings.
@@ -863,7 +865,7 @@ export const commands = {
 	appCheckUpdate: () => typedError<UpdateCheck, IdeError>(__TAURI_INVOKE("app_check_update")),
 	/**
 	 *  The background check made once per process when the first window starts;
-	 *  later calls (other windows) and debug builds get `None`. Failures are logged,
+	 *  later calls (other windows) and development launches get `None`. Failures are logged,
 	 *  not reported: the user didn't ask for this check.
 	 */
 	appStartupUpdateCheck: () => __TAURI_INVOKE<{
@@ -954,7 +956,7 @@ export const commands = {
 	pluginActivationEvent: (kind: string, value: string) => typedError<null, IdeError>(__TAURI_INVOKE("plugin_activation_event", { kind, value })),
 	/**
 	 *  Plugin packages available locally for installation: `<resources>/plugins`
-	 *  when bundled, plus the repository's official plugins in debug builds.
+	 *  when bundled, plus the repository's official plugins in development launches.
 	 */
 	pluginCatalog: () => typedError<CatalogPlugin[], IdeError>(__TAURI_INVOKE("plugin_catalog")),
 	pluginUninstall: (id: string) => typedError<null, IdeError>(__TAURI_INVOKE("plugin_uninstall", { id })),
@@ -3919,7 +3921,7 @@ export type GradleProject = {
 export type GradleRunUsing = 
 /**  A `JavaExec` task on the source set's runtime classpath (`gradleRun.gradle`). */
 "gradle" | 
-/**  The Java language server's classpath, launched by OpenIDEA. */
+/**  The Java language server's classpath, launched by OpenPyCharm. */
 "ide";
 
 /**  Build Tools › Gradle. */
@@ -5901,6 +5903,11 @@ export type PullRequestSummary = {
 /**  Push dialog › Push tags: every tag, or only annotated tags on the pushed commits. */
 export type PushTags = "all" | "currentBranch";
 
+export type PyCharmArchive = {
+	files: { [key in string]: string },
+	skipped: string[],
+};
+
 /**  Python Debugger (debugpy launch options). */
 export type PythonDebuggerSettings = {
 	attachSubprocess?: boolean,
@@ -6541,6 +6548,7 @@ export type SettingsImport_Deserialize = {
 	settings: Settings_Deserialize,
 	/**  IDE state the frontend keeps (written back to its storage). */
 	storage: { [key in string]: string },
+	backup: string | null,
 };
 
 export type SettingsImport_Serialize = {
@@ -6548,6 +6556,7 @@ export type SettingsImport_Serialize = {
 	settings: Settings_Serialize,
 	/**  IDE state the frontend keeps (written back to its storage). */
 	storage: { [key in string]: string },
+	backup: string | null,
 };
 
 export type SettingsScope = "global" | "project";
