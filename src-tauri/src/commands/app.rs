@@ -217,10 +217,15 @@ pub async fn settings_read_pycharm(path: PathBuf) -> IdeResult<ide_workspace::se
 
 #[tauri::command]
 #[specta::specta]
-pub async fn settings_import_pycharm(window: Window, state: State<'_, AppState>, patch: String) -> IdeResult<SettingsImport> {
+pub async fn settings_import_pycharm(
+    window: Window,
+    state: State<'_, AppState>,
+    patch: String,
+) -> IdeResult<SettingsImport> {
     let host = state.host.clone();
     let backup = tauri::async_runtime::spawn_blocking(move || {
-        let values = serde_json::from_str(&patch).map_err(|error| ide_core::IdeError::invalid(format!("Invalid imported settings: {error}")))?;
+        let values = serde_json::from_str(&patch)
+            .map_err(|error| ide_core::IdeError::invalid(format!("Invalid imported settings: {error}")))?;
         host.global_settings.merge_import(values)
     })
     .await

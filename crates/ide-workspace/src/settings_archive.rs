@@ -61,7 +61,9 @@ pub fn read_pycharm_archive(path: &Path) -> IdeResult<PyCharmArchive> {
             marker = true;
             continue;
         }
-        total = total.checked_add(entry.size()).ok_or_else(|| IdeError::invalid("Expanded settings archive is too large"))?;
+        total = total
+            .checked_add(entry.size())
+            .ok_or_else(|| IdeError::invalid("Expanded settings archive is too large"))?;
         if entry.size() > MAX_FILE_BYTES || total > MAX_ARCHIVE_BYTES {
             return Err(IdeError::invalid("Expanded settings archive is too large"));
         }

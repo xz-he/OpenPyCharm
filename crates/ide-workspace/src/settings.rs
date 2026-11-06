@@ -358,7 +358,8 @@ impl SettingsStore {
         try_merge(&mut defaults_json(), layer).map_err(IdeError::invalid)?;
         let directory = self.global_file.parent().ok_or_else(|| IdeError::internal("Missing settings directory"))?;
         std::fs::create_dir_all(directory)?;
-        let mut backup = tempfile::Builder::new().prefix("settings-before-pycharm-").suffix(".toml").tempfile_in(directory)?;
+        let mut backup =
+            tempfile::Builder::new().prefix("settings-before-pycharm-").suffix(".toml").tempfile_in(directory)?;
         std::io::Write::write_all(&mut backup, original.as_bytes())?;
         backup.as_file().sync_all()?;
         let (_, backup_path) = backup.keep().map_err(|error| IdeError::internal(error.to_string()))?;
@@ -401,6 +402,28 @@ mod tests {
         assert!(store.merge_import(BTreeMap::from([("editor.fontSize".into(), json!("invalid"))])).is_err());
         assert_eq!(std::fs::read_to_string(&store.global_file).unwrap(), imported);
         assert!(store.merge_import(BTreeMap::from([("unknown.setting".into(), json!(true))])).is_err());
+    }
+
+    #[test]
+    fn pycharm_schemes_preserve_other_schemes_and_python_style_preserves_other_languages() {
+        let directory = tempfile::tempdir().unwrap();
+        let store = SettingsStore::load(directory.path(), None);
+        store.set(SettingsScope::Global, "editor.customSchemes", json!({"existing": {"name": "Existing", "parent": "dark", "attributes": {}}})).unwrap();
+        store.set(SettingsScope::Global, "editor.codeStyle.languages", json!({"python": {"hardWrapAt": 88}, "java": {"indent": 2}})).unwrap();
+        let patch = BTreeMap::from([
+            ("editor.customSchemes".into(), json!({"pycharm-Darcula": {"name": "Darcula", "parent": "dark", "attributes": {}}})),
+            ("editor.colorScheme".into(), json!("pycharm-Darcula")),
+            ("editor.codeStyle.languages".into(), json!({"python": {"indent": 4, "tabSize": 8, "useTab": false}})),
+        ]);
+        let first = store.merge_import(patch.clone()).unwrap();
+        let second = store.merge_import(patch).unwrap();
+        assert_ne!(first, second);
+        let settings = store.effective();
+        assert_eq!(settings.editor.custom_schemes.len(), 2);
+        assert_eq!(settings.editor.code_style.languages["java"].indent, Some(2));
+        assert_eq!(settings.editor.code_style.languages["python"].hard_wrap_at, Some(88));
+        assert_eq!(settings.editor.code_style.languages["python"].use_tab, Some(false));
+        assert_eq!(settings.editor.code_style.languages["python"].indent, Some(4));
     }
 
     #[test]
