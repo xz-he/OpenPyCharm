@@ -37,6 +37,15 @@ jobs:
             echo "::error::tag $TAG does not match tauri.conf.json version $app"
             exit 1
           fi
+      - name: Require updater signing key
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ] || [ -z "$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" ]; then
+            echo "::error::TAURI_SIGNING_PRIVATE_KEY and TAURI_SIGNING_PRIVATE_KEY_PASSWORD are required for updates"
+            exit 1
+          fi
       # The official plugins' public key (from PLUGIN_SIGNING_KEY, the seed
       # `openidea-plugin keygen` writes), built into the app: their packages
       # must carry its signature whatever the marketplace index lists. Without
@@ -288,7 +297,7 @@ jobs:
             const assets = await github.paginate(github.rest.repos.listReleaseAssets, { owner, repo, release_id });
             const sigs = assets.filter((a) => a.name.endsWith(".sig"));
             if (sigs.length === 0) {
-              core.notice("no signed bundles (TAURI_SIGNING_PRIVATE_KEY unset): skipping latest.json");
+              core.setFailed("no signed bundles found; updater manifest cannot be published");
               return;
             }
             // Bundle suffix → updater platform keys, as tauri-action names them.

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { create } from "zustand";
 import { call, commands } from "@/platform/ipc";
-import { tx } from "@/platform/i18n";
 import { useProject } from "@/platform/project";
 import { Dialog, T } from "@/ui";
 import { notifications } from "@/workbench/contributions";
@@ -77,7 +76,9 @@ function PyCharmImportDialog({ plan, onClose }: { plan: PyCharmSettingsPlan; onC
         {plan.groups.length ? (
           <ul>
             {plan.groups.map((group) => (
-              <li key={group}>{tx(group)}</li>
+              <li key={group}>
+                <T>{group}</T>
+              </li>
             ))}
           </ul>
         ) : (

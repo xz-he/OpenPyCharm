@@ -31,6 +31,17 @@
 
 该命令使用 debug profile，便于初期诊断，不代表最终发布性能。安装包输出到 `target/debug/bundle/nsis/`。
 
+## 版本更新
+
+正式 Release 使用 GitHub Releases 提供版本检查和安装包更新。发布前需要在仓库的
+GitHub Actions secrets 中配置：
+
+- `TAURI_SIGNING_PRIVATE_KEY`：Tauri updater 私钥内容。
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`：生成私钥时设置的密码。
+
+发布工作流会生成签名安装包和 `latest.json` 更新清单。应用启动时会静默检查更新，
+也可以从帮助菜单执行“检查更新”。下载完成后 OpenPyCharm 会自动重启并完成安装。
+
 安装包使用独立的桌面启动逻辑，不需要本机存在构建源码。修改启动或打包配置后，应对安装后的可执行文件运行回归检查：
 
 ```powershell
