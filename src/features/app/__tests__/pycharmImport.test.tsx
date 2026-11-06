@@ -42,10 +42,10 @@ describe("PyCharm settings import dialog", () => {
   it("applies the converted preferences and presents the backup path", async () => {
     render(<PyCharmImportOverlay />);
     await act(() => previewPyCharmImport("settings.zip"));
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
     await screen.findByText("D:/config/settings-before-pycharm.toml");
     expect(JSON.parse(backend.apply.mock.calls[0]![0])).toEqual({ "general.confirmExit": false });
-    fireEvent.click(screen.getAllByRole("button", { name: "Close", exact: true }).at(-1)!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Close" }).at(-1)!);
   });
 
   it("keeps failed imports open for retry", async () => {
@@ -55,9 +55,9 @@ describe("PyCharm settings import dialog", () => {
     });
     render(<PyCharmImportOverlay />);
     await act(() => previewPyCharmImport("settings.zip"));
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Cannot write backup"));
-    expect(screen.getByRole("button", { name: "Import", exact: true })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Import" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
   });
 });

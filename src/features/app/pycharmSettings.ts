@@ -329,6 +329,12 @@ export function planPyCharmSettings(archive: {
       const name = option.getAttribute("name");
       const scope = option.closest("codeStyleSettings");
       if (scope && scope.getAttribute("language") !== "Python") continue;
+      if (
+        !scope &&
+        option.parentElement !== document.documentElement &&
+        !option.closest('option[name="OTHER_INDENT_OPTIONS"]')
+      )
+        continue;
       if (option.closest("PythonCodeStyleSettings")) continue;
       const value = option.getAttribute("value")!;
       const fields: Record<string, [string, Converter]> = {

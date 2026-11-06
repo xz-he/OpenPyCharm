@@ -408,10 +408,25 @@ mod tests {
     fn pycharm_schemes_preserve_other_schemes_and_python_style_preserves_other_languages() {
         let directory = tempfile::tempdir().unwrap();
         let store = SettingsStore::load(directory.path(), None);
-        store.set(SettingsScope::Global, "editor.customSchemes", json!({"existing": {"name": "Existing", "parent": "dark", "attributes": {}}})).unwrap();
-        store.set(SettingsScope::Global, "editor.codeStyle.languages", json!({"python": {"hardWrapAt": 88}, "java": {"indent": 2}})).unwrap();
+        store
+            .set(
+                SettingsScope::Global,
+                "editor.customSchemes",
+                json!({"existing": {"name": "Existing", "parent": "dark", "attributes": {}}}),
+            )
+            .unwrap();
+        store
+            .set(
+                SettingsScope::Global,
+                "editor.codeStyle.languages",
+                json!({"python": {"hardWrapAt": 88}, "java": {"indent": 2}}),
+            )
+            .unwrap();
         let patch = BTreeMap::from([
-            ("editor.customSchemes".into(), json!({"pycharm-Darcula": {"name": "Darcula", "parent": "dark", "attributes": {}}})),
+            (
+                "editor.customSchemes".into(),
+                json!({"pycharm-Darcula": {"name": "Darcula", "parent": "dark", "attributes": {}}}),
+            ),
             ("editor.colorScheme".into(), json!("pycharm-Darcula")),
             ("editor.codeStyle.languages".into(), json!({"python": {"indent": 4, "tabSize": 8, "useTab": false}})),
         ]);
