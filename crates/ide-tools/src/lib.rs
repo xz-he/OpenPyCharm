@@ -492,7 +492,12 @@ impl Tools {
     }
 
     fn python(&self) -> Option<PathBuf> {
-        self.which_any(&["python3", "python"])
+        let candidates = if self.platform.os == Os::Windows { ["python", "python3"] } else { ["python3", "python"] };
+        candidates.iter().filter_map(|name| self.which(name)).find(|python| {
+            let mut command = self.python_command(python);
+            command.args(["-c", "import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)"]);
+            run_quiet(command, self.version_timeout).is_some_and(|(ok, _)| ok)
+        })
     }
 
     /// Executable `cmd` inside `dir`, honouring Windows suffixes.

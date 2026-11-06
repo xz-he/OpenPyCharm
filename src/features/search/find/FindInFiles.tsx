@@ -551,7 +551,10 @@ function FindInFilesDialog() {
         activeIndex={active}
         isSelected={(r) => isRowSelected(sel, r.key)}
         onActivate={(r, i, e) => {
-          if (e.type === "click" && (e as MouseEvent).detail < 2) return onRowClick(i, e as MouseEvent);
+          if (e.type === "click" && (e as MouseEvent).detail < 2) {
+            onRowClick(i, e as MouseEvent);
+            if (s.replace || chosen.length > 1 || e.shiftKey || e.metaKey || e.ctrlKey) return;
+          }
           openRow(r, e.shiftKey);
         }}
         focusable={false}
@@ -833,6 +836,16 @@ function FindInFilesDialog() {
                       line={selected?.line ?? 0}
                       highlights={fileHighlights}
                       version={previewVersion}
+                      onNavigate={(position, definition) => {
+                        if (!selected || stale) return;
+                        const path = selected.path;
+                        close();
+                        setTimeout(() => {
+                          void openLocation(path, position).then(() => {
+                            if (definition) return executeAction("navigate.declaration");
+                          });
+                        }, 0);
+                      }}
                     />
                   )}
                 </div>

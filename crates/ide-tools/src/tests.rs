@@ -713,3 +713,17 @@ fn python_probes_run_in_an_empty_private_directory() {
     let dir = env.root.join(".python-cwd");
     assert_eq!(out.trim(), dir.canonicalize().unwrap().to_string_lossy());
 }
+
+#[cfg(windows)]
+#[test]
+fn python_selection_skips_failed_launchers() {
+    let env = Env::new();
+    fs::write(env.sys.join("python.cmd"), "@exit /b 9009\r\n").unwrap();
+    fs::write(env.sys.join("python3.cmd"), "@exit /b 0\r\n").unwrap();
+    assert_eq!(env.tools().python(), Some(env.sys.join("python3.cmd")));
+    fs::write(env.sys.join("python.cmd"), "@exit /b 0\r\n").unwrap();
+    assert_eq!(env.tools().python(), Some(env.sys.join("python.cmd")));
+    fs::write(env.sys.join("python.cmd"), "@exit /b 9009\r\n").unwrap();
+    fs::write(env.sys.join("python3.cmd"), "@exit /b 9009\r\n").unwrap();
+    assert_eq!(env.tools().python(), None);
+}

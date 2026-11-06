@@ -11,6 +11,8 @@ import type { PreviewLine } from "./replaceFlow";
 import styles from "./parts.module.css";
 import { T } from "@/ui";
 import { tx } from "@/platform/i18n";
+import { isNavigationGesture } from "@/platform/navigationModifier";
+import type { Position } from "../common/open";
 
 /**
  * A result line with matches highlighted; in replace mode shows `old → new`
@@ -108,11 +110,13 @@ export function CodePreview({
   line,
   highlights,
   version = 0,
+  onNavigate,
 }: {
   path: string | null;
   line: number;
   highlights: readonly PreviewHighlight[];
   version?: number;
+  onNavigate?: (position: Position, definition: boolean) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -177,7 +181,21 @@ export function CodePreview({
   const placeholder = !path ? <T>Select a result to preview</T> : error && !current ? error : null;
   return (
     <div className={styles.preview} role="region" aria-label={tx("Preview")}>
-      <div ref={hostRef} className={clsx(styles.previewEditor, (!current || placeholder) && styles.previewHidden)} />
+      <div
+        ref={hostRef}
+        className={clsx(styles.previewEditor, (!current || placeholder) && styles.previewHidden)}
+        onClick={(event) => {
+          const view = viewRef.current;
+          if (!view || !current || !onNavigate || event.button !== 0) return;
+          if (!(event.target instanceof Element) || !event.target.closest(".cm-content")) return;
+          const definition = isNavigationGesture(event);
+          if (!definition && (!view.state.selection.main.empty || event.altKey || event.shiftKey)) return;
+          const offset = view.posAtCoords({ x: event.clientX, y: event.clientY });
+          if (offset == null) return;
+          const targetLine = view.state.doc.lineAt(offset);
+          onNavigate({ line: targetLine.number - 1, col: offset - targetLine.from }, definition);
+        }}
+      />
       {placeholder && <div className={styles.previewEmpty}>{placeholder}</div>}
     </div>
   );

@@ -70,6 +70,32 @@ function click(init: MouseEventInit) {
 }
 
 describe("mouse navigation", () => {
+  it("requests the definition of a Python name after from-import on Ctrl-click", async () => {
+    usePlatform.setState({ os: "windows" });
+    view.setState(
+      EditorState.create({
+        doc: "from services import load_orders",
+        extensions: [
+          lspDoc.of({ doc: 2, path: "/p/main.py", language: "python", uiMode: "Python", readOnly: false }),
+          navigationExtension(),
+        ],
+      }),
+    );
+    vi.mocked(view.posAtCoords).mockReturnValue(24);
+    lspGoto.mockResolvedValueOnce({
+      status: "ok",
+      data: [{ path: "/p/services.py", range: { start: { line: 7, col: 4 }, end: { line: 7, col: 15 } }, uri: null }],
+    });
+    click({ ctrlKey: true });
+    await vi.waitFor(() =>
+      expect(openFile).toHaveBeenCalledWith("/p/services.py", {
+        selection: { line: 7, col: 4 },
+        focus: true,
+      }),
+    );
+    expect(lspGoto).toHaveBeenCalledExactlyOnceWith(2, { line: 0, col: 24 }, "definition");
+  });
+
   it("opens the implementation of the symbol clicked with Option+Command", async () => {
     const event = click({ metaKey: true, altKey: true });
     await vi.waitFor(() =>

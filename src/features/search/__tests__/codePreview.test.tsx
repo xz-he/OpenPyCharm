@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { Text } from "@codemirror/state";
+import { EditorView } from "@codemirror/view";
+import { usePlatform } from "@/platform/platformInfo";
 
 vi.mock("../find/preview", () => ({
   loadPreviewText: async () => "fun a() {}\nval order = 1\norder()\n",
@@ -10,6 +12,33 @@ vi.mock("../find/preview", () => ({
 const { CodePreview, previewDecorations } = await import("../find/parts");
 
 describe("CodePreview", () => {
+  it("opens the clicked source position and forwards Ctrl-click for definition navigation", async () => {
+    const onNavigate = vi.fn();
+    const previousOs = usePlatform.getState().os;
+    usePlatform.setState({ os: "windows" });
+    const { container, unmount } = render(
+      <CodePreview path="/p/a.kt" line={1} highlights={[]} onNavigate={onNavigate} />,
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+    const content = container.querySelector<HTMLElement>(".cm-content")!;
+    const view = EditorView.findFromDOM(content)!;
+    const coords = vi.spyOn(view, "posAtCoords").mockReturnValue(14);
+    try {
+      fireEvent.click(content);
+      expect(onNavigate).toHaveBeenLastCalledWith({ line: 1, col: 3 }, false);
+      fireEvent.click(content, { ctrlKey: true });
+      expect(onNavigate).toHaveBeenLastCalledWith({ line: 1, col: 3 }, true);
+      onNavigate.mockClear();
+      act(() => view.dispatch({ selection: { anchor: 11, head: 16 } }));
+      fireEvent.click(content);
+      expect(onNavigate).not.toHaveBeenCalled();
+    } finally {
+      coords.mockRestore();
+      unmount();
+      usePlatform.setState({ os: previousOs });
+    }
+  });
+
   it("marks matches (the current line's as current) and the current line", () => {
     const doc = Text.of(["ab", "order order", "x"]);
     const set = previewDecorations(doc, 1, [
