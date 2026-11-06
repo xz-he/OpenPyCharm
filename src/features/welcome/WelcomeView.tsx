@@ -1,13 +1,13 @@
 /** IntelliJ-style welcome window: brand + navigation on the left, the selected page on the right. */
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { executeAction } from "@/platform/actions";
+import { executeAction, useActions } from "@/platform/actions";
 import { useT, useTx, tx } from "@/platform/i18n";
 import { isTauri } from "@/platform/ipc";
 import { useProject } from "@/platform/project";
 import { useRemoteProgress } from "@/platform/remote";
 import { stageLabel, useConnectDialog } from "@/features/remote-dev/model";
-import { Icon, IconButton, Menu, ProgressBar, Spinner, type MenuItem, T } from "@/ui";
+import { Button, Icon, IconButton, Menu, ProgressBar, Spinner, type MenuItem, T } from "@/ui";
 import { useSettingsPages } from "@/workbench/contributions";
 import { ErrorBoundary, Slot } from "@/workbench/ErrorBoundary";
 import logo from "../../../src-tauri/icons/128x128.png";
@@ -58,6 +58,22 @@ function GearButton() {
         aria-label="Manage"
       />
     </>
+  );
+}
+
+function UpdateButton() {
+  const available = useActions((s) => s.actions.has("app.checkForUpdates"));
+  if (!available) return null;
+  return (
+    <Button
+      size="small"
+      variant="ghost"
+      icon="refresh"
+      className={styles.updateButton}
+      onClick={() => void executeAction("app.checkForUpdates")}
+    >
+      <T>Check for Updates…</T>
+    </Button>
   );
 }
 
@@ -180,6 +196,7 @@ export function WelcomeView() {
         </nav>
         <div className={styles.sidebarSpacer} />
         <div className={styles.sidebarFooter}>
+          <UpdateButton />
           <GearButton />
         </div>
       </aside>

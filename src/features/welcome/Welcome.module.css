@@ -80,7 +80,15 @@
 }
 .sidebarFooter {
   display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 0 4px;
+}
+.updateButton {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+  padding-inline: 8px;
 }
 .gear {
   color: var(--fg-secondary);
