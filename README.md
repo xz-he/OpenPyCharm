@@ -15,6 +15,16 @@
 
 ## Windows 开发
 
+### Codex（ACP）自动安装
+
+选择内置 Codex（ACP）后，OpenPyCharm 会在首次连接时自动安装固定版本的适配器。
+安装和 npm 缓存位于应用用户数据目录的 `agents/managed-adapters/codex-acp/`，不依赖系统的 npx 临时缓存。
+本机需要已有 Node.js 和 npm；首次安装需要网络，后续复用安装结果。
+安装失败后可重新发起任务重试，缺失或不完整的安装会自动重装。自定义启动命令保持不变。
+适配器安装不代替账号登录，使用前仍需完成 `codex login`。
+
+### 开发依赖
+
 需要 Node.js 22.18+、pnpm、Rust 1.96+、Visual Studio C++ Build Tools、Windows SDK 和 WebView2。
 
 本机已在项目父目录的 `.openpycharm-tools` 中安装隔离 Rust 工具链。启动脚本优先使用该工具链，不修改系统 PATH。

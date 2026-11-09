@@ -10,6 +10,7 @@
 mod acp;
 mod config;
 mod conversation;
+mod managed_adapter;
 mod model;
 mod native;
 mod provider;
@@ -89,6 +90,7 @@ type Connector = Arc<
 >;
 
 struct Shared {
+    managed_adapters: bool,
     paths: AgentPaths,
     runtime: tokio::runtime::Handle,
     connector: Connector,
@@ -112,6 +114,19 @@ struct Known {
 }
 
 impl Shared {
+    async fn prepare(&self, spec: provider::ProviderSpec) -> IdeResult<provider::ProviderSpec> {
+        if !self.managed_adapters || !managed_adapter::applies(&spec) {
+            return Ok(spec);
+        }
+        let root = self
+            .paths
+            .models_file
+            .parent()
+            .ok_or_else(|| IdeError::internal("Missing agent data directory"))?
+            .join("managed-adapters")
+            .join("codex-acp");
+        blocking(move || managed_adapter::prepare(spec, &root)).await
+    }
     fn spec(&self, id: &str) -> Option<provider::ProviderSpec> {
         self.providers.read().iter().find(|p| p.id == id).cloned()
     }
@@ -263,14 +278,25 @@ impl AgentManager {
             provider::Driver::Codex => native::codex::connect(spec, cwd, client, on_stderr),
             provider::Driver::Claude => native::claude::connect(spec, cwd, client, on_stderr),
         });
-        Self::with_connector(paths, runtime, connector)
+        Self::with_setup(paths, runtime, connector, true)
     }
 
+    #[cfg(test)]
     fn with_connector(paths: AgentPaths, runtime: tokio::runtime::Handle, connector: Connector) -> Self {
+        Self::with_setup(paths, runtime, connector, false)
+    }
+
+    fn with_setup(
+        paths: AgentPaths,
+        runtime: tokio::runtime::Handle,
+        connector: Connector,
+        managed_adapters: bool,
+    ) -> Self {
         let known =
             std::fs::read(&paths.models_file).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
         let providers = RwLock::new(provider::load(paths.custom_agents_dir.as_deref()));
         let shared = Arc::new(Shared {
+            managed_adapters,
             paths,
             runtime,
             connector,
@@ -734,12 +760,15 @@ impl AgentManager {
         let stderr: Arc<Mutex<Vec<String>>> = Arc::default();
         let lines = stderr.clone();
         let on_stderr: Box<dyn Fn(String) + Send + Sync> = Box::new(move |l| lines.lock().push(l));
-        let started = (self.shared.connector)(
-            &spec,
-            &self.shared.paths.project_root,
-            Arc::new(ide_jsonrpc::NoopHandler),
-            on_stderr,
-        );
+        let started = match self.shared.prepare(spec.clone()).await {
+            Ok(prepared) => (self.shared.connector)(
+                &prepared,
+                &self.shared.paths.project_root,
+                Arc::new(ide_jsonrpc::NoopHandler),
+                on_stderr,
+            ),
+            Err(error) => Err(std::io::Error::other(error.to_string())),
+        };
         let reply = match started {
             Err(e) => Err(format!("Couldn't start {} (`{}`): {e}", spec.name, spec.command)),
             Ok(peer) => {
@@ -775,7 +804,9 @@ impl AgentManager {
             }
             Err(e) => probe.error = Some(e),
         }
-        self.shared.probes.lock().insert(spec.id, probe.clone());
+        if probe.error.is_none() {
+            self.shared.probes.lock().insert(spec.id, probe.clone());
+        }
         Ok(probe)
     }
 
@@ -1237,6 +1268,7 @@ impl Task {
             (s.task.provider.clone(), s.task.cwd.0.clone(), s.session_id.clone())
         };
         let spec = self.shared.spec(&provider_id).ok_or_else(|| format!("unknown agent {provider_id}"))?;
+        let spec = self.shared.prepare(spec).await.map_err(|error| error.to_string())?;
         self.stderr.lock().clear();
         self.config_sent.lock().clear();
         let weak = Arc::downgrade(self);

@@ -209,6 +209,11 @@ export function HomeEditor({ docked = false }: { docked?: boolean; input?: Edito
               : [probe.name, probe.version, probe.protocol].filter(Boolean).join(" · ")}
           </p>
         )}
+        {provider?.id === "codex-acp" && provider.installed && !probe && (
+          <p className={styles.note}>
+            <T>Starting the agent…</T>
+          </p>
+        )}
         {(error || (provider && !provider.installed) || (provider && !provider.config.length)) && (
           <p
             className={error || !provider?.installed ? styles.warning : styles.note}

@@ -102,6 +102,44 @@ beforeEach(() => {
 });
 
 describe("a pending question", () => {
+  it("collapses the process when a turn finishes and allows reopening it", async () => {
+    const entries: AgentEntry[] = [
+      { type: "user", text: "Investigate", attachments: [], sentMs: 1 },
+      { type: "thought", text: "Inspect the code" },
+      { type: "agent", text: "Searching now" },
+      {
+        type: "tool",
+        id: "search",
+        title: "Find source",
+        kind: "search",
+        status: "completed",
+        locations: [],
+        output: null,
+        diffs: [],
+      },
+      { type: "agent", text: "Final answer" },
+    ];
+    backend.entries.set("A", entries);
+    useAgents.setState({
+      entries: new Map(backend.entries),
+      tasks: new Map([["A", { ...task("A"), status: "running" }]]),
+    });
+    render(<SessionEditor input={input("A")} />);
+    const toggle = await screen.findByRole("button", { name: "Thinking" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Find source")).toBeVisible();
+    fireEvent.click(toggle);
+    expect(screen.getByText("Find source")).not.toBeVisible();
+    fireEvent.click(toggle);
+    act(() => useAgents.setState({ tasks: new Map([["A", task("A")]]) }));
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-expanded", "false"));
+    expect(screen.getByText("Inspect the code")).not.toBeVisible();
+    expect(screen.getByText("Searching now")).not.toBeVisible();
+    expect(screen.getByText("Final answer")).toBeVisible();
+    fireEvent.click(toggle);
+    expect(screen.getByText("Find source")).toBeVisible();
+  });
+
   it("shows the whole question in the banner, with every answer, and sends the chosen one", async () => {
     const question =
       'Scenario 4 ("follows the TR") still leaves the "About your request" section empty after two rewrites.\nHow should we continue?';

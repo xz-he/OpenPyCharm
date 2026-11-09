@@ -408,11 +408,38 @@
   gap: 8px;
   min-width: 0;
   padding: 2px 8px;
-  margin-left: -8px;
   border-radius: var(--radius-row);
   color: var(--fg-secondary);
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
+}
+.processToggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.processContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-left: 1px solid var(--border);
+}
+.processContent[hidden] {
+  display: none;
+}
+.processContent .agentMessage {
+  padding: 0;
+}
+.processContent .replyActions {
+  display: none;
 }
 .toolDetails > summary.tool:hover {
   background: var(--bg-hover);

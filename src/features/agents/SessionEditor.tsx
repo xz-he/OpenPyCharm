@@ -67,6 +67,7 @@ import {
 import { setFocusedSession, focusedSession, type FocusedSession } from "./sessionFocus";
 import { taskMenu } from "./taskActions";
 import styles from "./Session.module.css";
+import { processGroups } from "./processGroups";
 
 export function SessionEditor({ input, docked = false }: { input: EditorInput; docked?: boolean }) {
   const id = (input.data as { task: string }).task;
@@ -477,16 +478,31 @@ function Stream({ task, entries, subagent, onOpenSubagent, finding, findFocus, o
         {entries === null ? (
           <Spinner />
         ) : (
-          entries.map((entry, i) => (
-            <Entry
-              key={i}
-              task={task}
-              entry={entry}
-              turn={turns?.get(i) ?? null}
-              turnCount={turns?.size ?? 0}
-              onOpenSubagent={onOpenSubagent}
-            />
-          ))
+          processGroups(entries).map((group) => {
+            const content = group.indices.map((index) => (
+              <Entry
+                key={index}
+                task={task}
+                entry={entries[index]!}
+                turn={turns?.get(index) ?? null}
+                turnCount={turns?.size ?? 0}
+                onOpenSubagent={onOpenSubagent}
+              />
+            ));
+            return group.process ? (
+              <ProcessGroup
+                key={group.indices[0]}
+                active={
+                  group.current &&
+                  (subagent ? subagentWorking(subagent.status) : isBusy(task.status) && lastUser?.doneMs == null)
+                }
+              >
+                {content}
+              </ProcessGroup>
+            ) : (
+              <Fragment key={group.indices[0]}>{content}</Fragment>
+            );
+          })
         )}
         {subagent && subagentWorking(subagent.status) && (
           <div className={styles.working}>
@@ -512,6 +528,28 @@ function Stream({ task, entries, subagent, onOpenSubagent, finding, findFocus, o
 }
 
 type UserEntry = Extract<AgentEntry, { type: "user" }>;
+
+function ProcessGroup({ active, children }: { active: boolean; children: import("react").ReactNode }) {
+  const [state, setState] = useState({ active, open: active });
+  if (state.active !== active) setState({ active, open: active });
+  const open = state.active === active ? state.open : active;
+  return (
+    <div className={styles.processGroup}>
+      <button
+        type="button"
+        className={styles.processToggle}
+        aria-expanded={open}
+        onClick={() => setState({ active, open: !open })}
+      >
+        <Icon name={open ? "chevron-down" : "chevron-right"} size={12} />
+        <T>Thinking</T>
+      </button>
+      <div className={styles.processContent} hidden={!open}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 /** Time since `since`, ticking every second. */
 /** The agent lost its API connection (or was refused) and retries on its own. */
@@ -746,14 +784,7 @@ function Entry({
         </div>
       );
     case "thought":
-      return (
-        <details className={styles.thought}>
-          <summary>
-            <T>Thinking</T>
-          </summary>
-          <div className={styles.thoughtText}>{entry.text}</div>
-        </details>
-      );
+      return <div className={styles.thoughtText}>{entry.text}</div>;
     case "tool":
       return <ToolEntry task={task} entry={entry} />;
     case "plan":
