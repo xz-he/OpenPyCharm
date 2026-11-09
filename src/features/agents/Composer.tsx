@@ -3,11 +3,22 @@
  * (project index search), `/` agent commands, ↑ / ↓ history, pasted or dropped images, Shift+Tab to cycle
  * the agent's mode. Its draft lives in the store under `id`.
  */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import clsx from "clsx";
 import type { AgentCommand, AgentConfigOption, AgentImage } from "@/bindings";
 import { call, commands, isTauri } from "@/platform/ipc";
 import { nativeDropPoint } from "@/platform/nativeDrop";
+import { ipcPath } from "@/platform/paths";
+import { FILES_DRAG, registerDropTarget } from "@/ui/pointerDrag";
 import { invokeLocal } from "@/platform/tauriCore";
 import { useTx } from "@/platform/i18n";
 import { basename } from "@/platform/project";
@@ -27,6 +38,7 @@ import {
   mentionOf,
   modeOption,
   nextValue,
+  toPrompt,
   recall,
   type Completion,
   type FileRef,
@@ -80,6 +92,7 @@ export function Composer(props: ComposerProps) {
   const [completion, setCompletion] = useState<Completion | null>(null);
   const [files, setFiles] = useState<Item[]>([]);
   const [active, setActive] = useState(0);
+  const [fileOver, setFileOver] = useState(false);
   const recalled = useRef<{ index: number; stash: string }>({ index: -1, stash: "" });
 
   useEffect(() => {
@@ -153,9 +166,7 @@ export function Composer(props: ComposerProps) {
   const items: Item[] = useMemo(() => {
     if (!completion) return [];
     if (completion.kind === "file") return files;
-    return matchCommands(props.commands, completion.query)
-      .slice(0, MAX_ITEMS)
-      .map((command) => ({ kind: "command", command }));
+    return matchCommands(props.commands, completion.query).map((command) => ({ kind: "command", command }));
   }, [completion, files, props.commands]);
   const open = !!completion && items.length > 0;
   const completionAnchor = useCompletionAnchor(ref, open ? completion.to : null, text);
@@ -215,6 +226,56 @@ export function Composer(props: ComposerProps) {
     }
   };
 
+  const referenceFiles = useCallback(
+    (paths: string[], fromProject = false) => {
+      const current = composerDraft(id);
+      const base = ipcPath(root).replace(/\/$/, "");
+      const projectBase = ipcPath(projectRoot).replace(/\/$/, "");
+      const seen = new Set(toPrompt(current).files.map(ipcPath));
+      const references: FileRef[] = [];
+      for (const raw of paths) {
+        let path = ipcPath(raw);
+        if (!path) continue;
+        if (fromProject && projectBase && path.startsWith(`${projectBase}/`)) {
+          path = `${base}/${path.slice(projectBase.length + 1)}`;
+        }
+        if (seen.has(path)) continue;
+        seen.add(path);
+        references.push({ path, rel: base && path.startsWith(`${base}/`) ? path.slice(base.length + 1) : path });
+      }
+      if (!references.length) return;
+      const start = ref.current?.selectionStart ?? current.text.length;
+      const end = ref.current?.selectionEnd ?? start;
+      const before = current.text.slice(0, start);
+      const after = current.text.slice(end);
+      const insert = `${before && !/\s$/.test(before) ? " " : ""}${references.map((file) => mentionOf(file.rel)).join(" ")}${/^\s/.test(after) ? "" : " "}`;
+      updateComposer(id, {
+        text: before + insert + after,
+        files: [...current.files, ...references],
+      });
+      setCompletion(null);
+      requestAnimationFrame(() => {
+        ref.current?.focus();
+        ref.current?.setSelectionRange(start + insert.length, start + insert.length);
+      });
+    },
+    [id, root, projectRoot],
+  );
+
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box) return;
+    return registerDropTarget(box, {
+      accepts: (type) => type === FILES_DRAG,
+      over: () => setFileOver(true),
+      leave: () => setFileOver(false),
+      drop: (data) => {
+        setFileOver(false);
+        referenceFiles(data.payload.split("\n"), true);
+      },
+    });
+  }, [referenceFiles]);
+
   // Files dropped from the OS onto the box: images are attached, other files referenced.
   useEffect(() => {
     if (!isTauri()) return;
@@ -228,7 +289,7 @@ export function Composer(props: ComposerProps) {
           const box = boxRef.current?.getBoundingClientRect();
           const { x, y } = nativeDropPoint(p.position);
           if (!box || x < box.left || x > box.right || y < box.top || y > box.bottom) return;
-          const refs: FileRef[] = [];
+          const paths: string[] = [];
           for (const path of p.paths) {
             if (IMAGE_EXTENSIONS.test(path)) {
               void invokeLocal<string>("fs_read_image", { path }).then((url) => {
@@ -236,15 +297,10 @@ export function Composer(props: ComposerProps) {
                 if (image) addImages([image]);
               });
             } else {
-              refs.push({ path, rel: path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path });
+              paths.push(path);
             }
           }
-          if (refs.length) {
-            const current = composerDraft(id);
-            const mentions = refs.map((r) => mentionOf(r.rel)).join(" ");
-            const glue = current.text && !/\s$/.test(current.text) ? " " : "";
-            updateComposer(id, { text: `${current.text}${glue}${mentions} `, files: [...current.files, ...refs] });
-          }
+          referenceFiles(paths);
         })
         .then((u) => {
           if (disposed) u();
@@ -256,7 +312,7 @@ export function Composer(props: ComposerProps) {
       unlisten?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-subscribe only when the target changes
-  }, [id, root]);
+  }, [id, root, referenceFiles]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (isImeKey(e.nativeEvent)) return;
@@ -315,7 +371,7 @@ export function Composer(props: ComposerProps) {
   return (
     <div
       ref={boxRef}
-      className={clsx(styles.composer, props.className)}
+      className={clsx(styles.composer, fileOver && styles.fileOver, props.className)}
       {...OWNS_FILE_DROP}
       onClick={() => ref.current?.focus()}
     >

@@ -1,6 +1,5 @@
-//! Claude Code's slash commands on disk, for completion before (or without) a session:
-//! skills (`.claude/skills/<dir>/SKILL.md`) and custom commands (`.claude/commands/**/*.md`)
-//! of the working directory and every directory above it, then the user's `~/.claude`.
+//! Agent skills and custom commands on disk, using the selected provider's directories
+//! in the working directory and its ancestors, followed by the user's home.
 
 use crate::AgentCommand;
 use std::collections::HashSet;
@@ -10,9 +9,18 @@ const MAX_DESCRIPTION: usize = 200;
 /// Command directories nest this deep at most (`a/b/c.md` → `a:b:c`).
 const MAX_DEPTH: usize = 4;
 
-/// The commands Claude Code finds from `cwd`: nearest directory first, the user's last;
-/// the first of a name wins.
-pub(crate) fn discover(cwd: &Path, home: Option<&Path>) -> Vec<AgentCommand> {
+#[cfg(test)]
+fn discover(cwd: &Path, home: Option<&Path>) -> Vec<AgentCommand> {
+    discover_for("claude", cwd, home)
+}
+
+pub(crate) fn discover_for(provider: &str, cwd: &Path, home: Option<&Path>) -> Vec<AgentCommand> {
+    let directories: &[&str] = match provider {
+        "claude" | "claude-acp" => &[".claude"],
+        "codex" | "codex-acp" => &[".agents", ".codex"],
+        "cursor" => &[".cursor", ".agents"],
+        _ => &[],
+    };
     let mut out = Vec::new();
     let mut seen = HashSet::new();
     let mut add = |found: Vec<AgentCommand>| {
@@ -26,10 +34,14 @@ pub(crate) fn discover(cwd: &Path, home: Option<&Path>) -> Vec<AgentCommand> {
         if home.is_some_and(|h| h == dir) {
             break;
         }
-        add(in_dir(&dir.join(".claude")));
+        for name in directories {
+            add(in_dir(&dir.join(name)));
+        }
     }
     if let Some(home) = home {
-        add(in_dir(&home.join(".claude")));
+        for name in directories {
+            add(in_dir(&home.join(name)));
+        }
     }
     out
 }
@@ -200,7 +212,7 @@ mod tests {
     #[test]
     fn project_and_user_skills_and_commands() {
         let tmp = tempfile::tempdir().unwrap();
-        let home = tmp.path().join("home");
+        let home = tmp.path().to_path_buf();
         let repo = tmp.path().join("work").join("idea");
         let skills = repo.join(".claude/skills");
         write(
@@ -244,6 +256,24 @@ mod tests {
         let repo = home.join("plain");
         std::fs::create_dir_all(&repo).unwrap();
         assert!(discover(&repo, Some(&home)).is_empty());
+    }
+
+    #[test]
+    fn discovers_agents_skills_for_non_claude_providers() {
+        let tmp = tempfile::tempdir().unwrap();
+        let home = tmp.path().to_path_buf();
+        let repo = tmp.path().join("work");
+        write(
+            &repo.join(".agents/skills/diagnose/SKILL.md"),
+            "---\nname: diagnose\ndescription: Diagnose a bug\n---\n",
+        );
+        write(&home.join(".agents/commands/release.md"), "Release the project\n");
+
+        let found = discover_for("codex", &repo, Some(&home));
+
+        assert_eq!(names(&found), ["diagnose", "release"]);
+        assert_eq!(found[0].description, "Diagnose a bug");
+        assert_eq!(found[1].description, "Release the project");
     }
 
     #[test]

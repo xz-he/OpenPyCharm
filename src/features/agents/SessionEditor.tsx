@@ -154,7 +154,14 @@ function TaskSession({ id, docked }: { id: string; docked: boolean }) {
             <T>Subagents take their instructions from the agent that started them.</T>
           </div>
         ) : (
-          <SessionComposer task={task} entries={entries ?? null} onOpenSubagent={openSubagent} />
+          <SessionComposer
+            task={task}
+            entries={entries ?? null}
+            onOpenSubagent={openSubagent}
+            changes={changes ?? null}
+            onReview={() => setChangesOpen(true)}
+            head={head}
+          />
         )}
       </div>
       {changesOpen && (
@@ -720,7 +727,24 @@ function Entry({
     case "user":
       return <UserMessage task={task} entry={entry} turn={turn} turnCount={turnCount} />;
     case "agent":
-      return <Markdown text={entry.text} cwd={task.cwd} />;
+      return (
+        <div className={styles.agentMessage}>
+          <Markdown text={entry.text} cwd={task.cwd} />
+          {entry.text && (
+            <div className={styles.replyActions}>
+              <IconButton icon="copy" title="Copy" size="small" onClick={() => void copyText(entry.text)} />
+              {task.status !== "archived" && (
+                <IconButton
+                  icon="edit"
+                  title="Quote"
+                  size="small"
+                  onClick={() => quoteInComposer(task.id, entry.text)}
+                />
+              )}
+            </div>
+          )}
+        </div>
+      );
     case "thought":
       return (
         <details className={styles.thought}>
@@ -1215,10 +1239,16 @@ function SessionComposer({
   task,
   entries,
   onOpenSubagent,
+  changes,
+  onReview,
+  head,
 }: {
   task: AgentTask;
   entries: AgentEntry[] | null;
   onOpenSubagent: (id: string) => void;
+  changes: AgentChange[] | null;
+  onReview: () => void;
+  head: string | null;
 }) {
   const project = useProject((s) => s.project);
   const composer = useAgents((s) => s.composers.get(task.id)) ?? emptyDraft();
@@ -1257,8 +1287,37 @@ function SessionComposer({
       )}
       <WorkingSubagents entries={entries} onOpen={onOpenSubagent} />
       {task.queue.length > 0 && <Queue task={task} />}
+      {!!changes?.length && (
+        <div className={styles.changeCard}>
+          <button type="button" className={styles.changeCardHeader} onClick={onReview}>
+            <span>
+              <T>Changes</T> · {changes.length} <T>{changes.length === 1 ? "file" : "files"}</T>
+            </span>
+            <Icon name="chevron-right" size={14} />
+          </button>
+          <div className={styles.changeCardFiles}>
+            {changes.map((change) => (
+              <button
+                type="button"
+                key={change.path}
+                className={styles.changeCardFile}
+                title={change.relPath}
+                onClick={() => void openChangeDiff(task, change.path)}
+              >
+                <Icon name={fileIconName(basename(change.path), change.path)} size={14} />
+                <span className={styles.changeName}>{change.relPath}</span>
+                <span className={styles.changeStat}>
+                  <span className={styles.added}>+{change.added}</span>{" "}
+                  <span className={styles.removed}>−{change.removed}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <Composer
         id={task.id}
+        className={styles.followup}
         placeholder={busy ? "Queue a message for when the agent is done (⌘↵ sends it now)" : "Reply to the agent"}
         root={task.cwd}
         projectRoot={project?.root ?? task.cwd}
@@ -1286,6 +1345,18 @@ function SessionComposer({
           </>
         }
       />
+      <div className={styles.composerContext}>
+        {(head ?? task.branch) && (
+          <span title={head ?? task.branch ?? undefined}>
+            <Icon name="branch" size={12} />
+            {head ?? task.branch}
+          </span>
+        )}
+        <span title={task.cwd}>
+          <Icon name="folder" size={12} />
+          {basename(task.cwd)}
+        </span>
+      </div>
     </div>
   );
 }

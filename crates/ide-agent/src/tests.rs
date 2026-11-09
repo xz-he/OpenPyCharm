@@ -204,7 +204,7 @@ fn manager_at(dir: &Path, models_file: &Path, agent: Arc<FakeAgent>) -> AgentMan
             worktrees_dir: dir.join("worktrees"),
             models_file: models_file.to_path_buf(),
             custom_agents_dir: None,
-            home_dir: None,
+            home_dir: Some(dir.to_path_buf()),
         },
         tokio::runtime::Handle::current(),
         connector,
@@ -251,6 +251,22 @@ async fn commands_are_remembered_per_project_and_merged_with_skills_on_disk() {
     assert!(mgr_b.commands("claude", None).await.unwrap().is_empty());
     let mgr_a = manager_at(&a, &models, Arc::new(FakeAgent::default()));
     assert_eq!(names(mgr_a.providers().into_iter().find(|p| p.id == "claude").unwrap().commands), ["review"]);
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn codex_commands_include_project_skills_before_any_session() {
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path().join("project");
+    std::fs::create_dir_all(root.join(".agents/skills/diagnose")).unwrap();
+    std::fs::write(root.join(".agents/skills/diagnose/SKILL.md"), "---\nname: diagnose\ndescription: Debug\n---\n")
+        .unwrap();
+    std::fs::create_dir_all(root.join(".codex/skills/review")).unwrap();
+    std::fs::write(root.join(".codex/skills/review/SKILL.md"), "---\nname: review\ndescription: Review\n---\n")
+        .unwrap();
+    let manager = manager_at(&root, &tmp.path().join("models.json"), Arc::new(FakeAgent::default()));
+    let commands = manager.commands("codex", None).await.unwrap();
+    assert_eq!(commands.iter().map(|command| command.name.as_str()).collect::<Vec<_>>(), ["diagnose", "review"]);
+    assert!(manager.commands("claude", None).await.unwrap().is_empty());
 }
 
 #[tokio::test(flavor = "multi_thread")]

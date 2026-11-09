@@ -144,13 +144,19 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 14px 16px 8px;
+  padding: 18px clamp(16px, 4vw, 56px) 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 .stream:focus {
   outline: none;
+}
+.stream > * {
+  flex-shrink: 0;
+  width: min(100%, 920px);
+  box-sizing: border-box;
+  margin-inline: auto;
 }
 /* Skip off-screen output layout; editable messages must repaint immediately when focus/content changes. */
 .stream > :not(.message):not(details) {
@@ -161,12 +167,14 @@
 /* Your message with its actions, shown on hover. */
 .message {
   position: relative;
+  width: min(100%, 920px);
+  margin: 0 auto;
 }
 .messageMeta {
   display: flex;
   align-items: center;
   min-height: 20px;
-  padding-left: 12px;
+  padding: 5px 12px 0;
   font-size: var(--fs-small);
 }
 .messageActions {
@@ -210,8 +218,11 @@
 }
 
 .user {
-  padding: 2px 0 2px 10px;
-  border-left: 2px solid var(--accent);
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-popup-large);
+  background: var(--bg-elev);
   color: var(--fg-strong);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -245,7 +256,7 @@
 }
 
 .markdown {
-  line-height: 1.55;
+  line-height: 1.65;
   overflow-wrap: anywhere;
 }
 .markdown :global(p) {
@@ -514,7 +525,94 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 6px 12px 12px;
+  width: min(100%, 980px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 8px 16px 16px;
+}
+
+.agentMessage {
+  width: min(100%, 920px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0 12px;
+  color: var(--fg-strong);
+}
+
+.replyActions {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  color: var(--fg-muted);
+}
+
+.followup {
+  border-radius: var(--radius-popup-large);
+  background: var(--bg-elev);
+}
+
+.composerContext {
+  display: flex;
+  gap: 16px;
+  min-width: 0;
+  padding: 4px 8px 0;
+  color: var(--fg-subtle);
+  font-size: var(--fs-small);
+}
+.composerContext > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.composerContext svg {
+  flex: none;
+}
+.changeCard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-popup-large);
+  overflow: hidden;
+  font-size: var(--fs-small);
+}
+.changeCardHeader,
+.changeCardFile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.changeCardHeader {
+  justify-content: space-between;
+}
+.changeCardFile:hover,
+.changeCardHeader:hover {
+  background: var(--bg-hover);
+}
+.changeCardFiles {
+  max-height: 100px;
+  overflow-y: auto;
+}
+.changeCardFile .changeName {
+  flex: 1;
+}
+@media (max-width: 600px) {
+  .stream {
+    padding: 12px;
+  }
+  .composerArea {
+    padding: 8px 12px 12px;
+  }
 }
 
 .queue {

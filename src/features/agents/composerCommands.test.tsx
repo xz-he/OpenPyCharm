@@ -74,6 +74,22 @@ beforeEach(() => {
 });
 
 describe("New Task composer commands", () => {
+  it("shows all Codex skills on slash before starting a session", async () => {
+    useAgents.setState({
+      providers: [{ ...claude, id: "codex", name: "Codex", commands: [] }],
+      draft: { provider: "codex", config: {}, isolation: "local", base: null },
+    });
+    const skills = Array.from({ length: 20 }, (_, index) => command(`skill-${index}`, `Description ${index}`));
+    agentCommands.mockResolvedValue({ status: "ok", data: skills });
+    render(<HomeEditor />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "/" } });
+    const list = await screen.findByRole("listbox", { name: "Commands" });
+    expect(within(list).getAllByRole("option")).toHaveLength(20);
+    fireEvent.mouseDown(within(list).getAllByRole("option")[19]!);
+    expect(screen.getByRole("textbox")).toHaveValue("/skill-19 ");
+    expect(agentCreate).not.toHaveBeenCalled();
+  });
+
   it("names the icon-only Start action and disables it while starting", async () => {
     agentCommands.mockResolvedValue({ status: "ok", data: [] });
     let finish!: (value: unknown) => void;

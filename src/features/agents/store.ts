@@ -362,7 +362,7 @@ export const NO_COMMANDS: readonly AgentCommand[] = [];
 
 /**
  * Slash commands to complete: what the agent offered (`offered`; fetched again when it
- * changes) plus, for Claude Code, the skills and custom commands on disk. Without `task`,
+ * changes) plus the provider's skills and custom commands on disk. Without `task`,
  * those of the project.
  */
 export function useAgentCommands(

@@ -365,7 +365,7 @@ impl AgentManager {
 
     /// The slash commands to complete for `provider`, in `task`'s directory or (without one)
     /// in the project: what the agent offered last time there, unadvertised builtins,
-    /// and, for Claude Code, skills and custom commands on disk it has not listed.
+    /// and skills and custom commands from the provider's directories on disk.
     pub async fn commands(&self, provider: &str, task: Option<&str>) -> IdeResult<Vec<AgentCommand>> {
         let (provider, offered, cwd) = match task {
             Some(id) => {
@@ -383,11 +383,8 @@ impl AgentManager {
                 offered.push(AgentCommand { name: name.to_owned(), description: description.to_owned(), hint: None });
             }
         }
-        if provider != "claude" && provider != "claude-acp" {
-            return Ok(offered);
-        }
         let home = self.shared.paths.home_dir.clone();
-        let found = blocking(move || Ok(skills::discover(&cwd, home.as_deref()))).await?;
+        let found = blocking(move || Ok(skills::discover_for(&provider, &cwd, home.as_deref()))).await?;
         Ok(skills::merge(offered, found))
     }
 
